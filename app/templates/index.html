@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private Assistant</title>
+  <style>
+    :root {
+      --bg: #f5f1e8;
+      --panel: #fffaf2;
+      --ink: #1f2a2e;
+      --muted: #6b726f;
+      --line: #d8cdbf;
+      --accent: #c25b2f;
+      --accent-soft: #f2d3ba;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #fff6df 0, transparent 32%),
+        linear-gradient(180deg, #efe5d6 0%, var(--bg) 100%);
+    }
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 48px;
+    }
+    h1, h2 { margin: 0 0 12px; }
+    .lead { color: var(--muted); margin-bottom: 24px; }
+    .panel {
+      background: color-mix(in srgb, var(--panel) 92%, white);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      margin-bottom: 18px;
+      box-shadow: 0 16px 40px rgba(80, 51, 19, 0.08);
+    }
+    form { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    input[type="file"] {
+      flex: 1 1 280px;
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    dl {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 16px;
+      margin: 0;
+    }
+    dt { color: var(--muted); }
+    dd { margin: 0; font-weight: 700; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      text-align: left;
+      padding: 12px 8px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+    th { color: var(--muted); font-weight: 600; }
+    .message {
+      margin-bottom: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: var(--accent-soft);
+    }
+    @media (max-width: 640px) {
+      dl { grid-template-columns: 1fr; }
+      table, thead, tbody, tr, td, th { display: block; }
+      thead { display: none; }
+      td { padding-left: 0; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="panel">
+      <h1>Life Agent MVP</h1>
+      <p class="lead">Upload a receipt image, infer bookkeeping intent, and store the ledger entry locally.</p>
+      <form action="/" method="post" enctype="multipart/form-data">
+        <input type="file" name="image" accept="image/*" required>
+        <button type="submit">Process Receipt</button>
+      </form>
+    </section>
+
+    {% if result %}
+    <section class="panel">
+      <h2>Upload Result</h2>
+      <div class="message">{{ result.message }}</div>
+      {% if result.parsed_receipt %}
+      <dl>
+        <div><dt>Intent</dt><dd>{{ result.intent }}</dd></div>
+        <div><dt>Confidence</dt><dd>{{ result.confidence }}</dd></div>
+        <div><dt>Merchant</dt><dd>{{ result.parsed_receipt.merchant or "-" }}</dd></div>
+        <div><dt>Currency</dt><dd>{{ result.parsed_receipt.currency or "-" }}</dd></div>
+        <div><dt>Original</dt><dd>{{ result.parsed_receipt.original_amount or "-" }}</dd></div>
+        <div><dt>Discount</dt><dd>{{ result.parsed_receipt.discount_amount or "-" }}</dd></div>
+        <div><dt>Actual</dt><dd>{{ result.parsed_receipt.actual_amount or "-" }}</dd></div>
+        <div><dt>Category</dt><dd>{{ result.parsed_receipt.category_guess or "-" }}</dd></div>
+      </dl>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <section class="panel">
+      <h2>Recent Entries</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Merchant</th>
+            <th>Amount</th>
+            <th>Currency</th>
+            <th>Category</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in entries %}
+          <tr>
+            <td>{{ entry.id }}</td>
+            <td>{{ entry.merchant or "-" }}</td>
+            <td>{{ entry.actual_amount }}</td>
+            <td>{{ entry.currency or "-" }}</td>
+            <td>{{ entry.category or "-" }}</td>
+            <td>{{ entry.created_at }}</td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="6">No ledger entries yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </main>
+</body>
+</html>
