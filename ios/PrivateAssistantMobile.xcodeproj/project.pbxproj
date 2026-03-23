@@ -1,0 +1,597 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3629F9E559C8C3B12217692D /* PrivateAssistantConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0DB947562F2B029B428C3A /* PrivateAssistantConfiguration.swift */; };
+		3F5AD8698B354CEE5FACFE70 /* PrivateAssistantShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */; };
+		6B100DAA30583CAB7D6A59CB /* PrivateAssistantAPIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = C09F84491D464FEEC912E830 /* PrivateAssistantAPIClient.swift */; };
+		6DB72A88F81B4D06171AA6D9 /* PrivateAssistantShared.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		6F89C9DDA503D7F77FF72D23 /* SendToPrivateAssistantIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = D50C76B6409ED04F581AF979 /* SendToPrivateAssistantIntent.swift */; };
+		757E91830A738B6FCC7AA409 /* ActivityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 090F68135B6614000A2D501F /* ActivityView.swift */; };
+		A2A11F040899429AC73489A6 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02E5B69D38FA59A61B637F15 /* ShareViewController.swift */; };
+		A7332B92165B2F31065E62BE /* PrivateAssistantShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */; };
+		ACEF4A852BC95E0F2E778C9F /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 840AB4BC861EF0BA7087A2BF /* AppModel.swift */; };
+		B9E303A7CBF5C4932FAB5F90 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A90F0A08D4D959185D25321B /* SettingsView.swift */; };
+		C2FD2F541ED193888DC32BA2 /* PrivateAssistantShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2E3F130AD89B12ECF3D97F77 /* PrivateAssistantShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D32F22C75297AFFB49036850 /* LedgerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0567FAFE533E6E682AED298 /* LedgerView.swift */; };
+		ECA375C3DADA26BDA68CF1B4 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FA3370119DD226EE707E497 /* RootView.swift */; };
+		FA59A05E7661D2D4CD5AAD82 /* CaptureComposerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E97AD646D9D4AA6E1EE26D18 /* CaptureComposerView.swift */; };
+		FC63DB480707F9008116373B /* PrivateAssistantModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAE9D19258A1577E142E0E54 /* PrivateAssistantModels.swift */; };
+		FE41423440B70DA60799B450 /* PrivateAssistantApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF1F26CB89344B679D9783C0 /* PrivateAssistantApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		055C7D1E26E4FB7C9FE81D2D /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB2BE35F77B1B29336865A1F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96BEF6E3A88E4402A03D1043;
+			remoteInfo = PrivateAssistantShared;
+		};
+		0F90DF828D7ACCBBEA747DC9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB2BE35F77B1B29336865A1F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7CD572FE3DB28238E1739E01;
+			remoteInfo = PrivateAssistantShareExtension;
+		};
+		A51937C83E28E19C84A919EC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FB2BE35F77B1B29336865A1F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 96BEF6E3A88E4402A03D1043;
+			remoteInfo = PrivateAssistantShared;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		5D19BF55449606C3578EF1BF /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C2FD2F541ED193888DC32BA2 /* PrivateAssistantShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D4F66438869A4ACDF95E34D9 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				6DB72A88F81B4D06171AA6D9 /* PrivateAssistantShared.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		02E5B69D38FA59A61B637F15 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		090F68135B6614000A2D501F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		2E3F130AD89B12ECF3D97F77 /* PrivateAssistantShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrivateAssistantShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = PrivateAssistantShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		4FA3370119DD226EE707E497 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		831C00CD75C6A3DB25354778 /* PrivateAssistantApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PrivateAssistantApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		840AB4BC861EF0BA7087A2BF /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		8D0DB947562F2B029B428C3A /* PrivateAssistantConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateAssistantConfiguration.swift; sourceTree = "<group>"; };
+		A90F0A08D4D959185D25321B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C09F84491D464FEEC912E830 /* PrivateAssistantAPIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateAssistantAPIClient.swift; sourceTree = "<group>"; };
+		CAE9D19258A1577E142E0E54 /* PrivateAssistantModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateAssistantModels.swift; sourceTree = "<group>"; };
+		D50C76B6409ED04F581AF979 /* SendToPrivateAssistantIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SendToPrivateAssistantIntent.swift; sourceTree = "<group>"; };
+		E97AD646D9D4AA6E1EE26D18 /* CaptureComposerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CaptureComposerView.swift; sourceTree = "<group>"; };
+		F0567FAFE533E6E682AED298 /* LedgerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LedgerView.swift; sourceTree = "<group>"; };
+		FF1F26CB89344B679D9783C0 /* PrivateAssistantApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivateAssistantApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		867C5EAD96340BAFC4781678 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F5AD8698B354CEE5FACFE70 /* PrivateAssistantShared.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F5BAFB7B5D0DA85BA629FB49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A7332B92165B2F31065E62BE /* PrivateAssistantShared.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0AA60E4A125932773060E87C /* PrivateAssistantShareExtension */ = {
+			isa = PBXGroup;
+			children = (
+				02E5B69D38FA59A61B637F15 /* ShareViewController.swift */,
+			);
+			path = PrivateAssistantShareExtension;
+			sourceTree = "<group>";
+		};
+		3F891229919330A680651902 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				831C00CD75C6A3DB25354778 /* PrivateAssistantApp.app */,
+				3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */,
+				2E3F130AD89B12ECF3D97F77 /* PrivateAssistantShareExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A0AE0CD91B5833555B32CB19 = {
+			isa = PBXGroup;
+			children = (
+				F9A65205C4CAFFE338784DD6 /* PrivateAssistantApp */,
+				C292BF85B05B4EE5FF52FC0A /* PrivateAssistantShared */,
+				0AA60E4A125932773060E87C /* PrivateAssistantShareExtension */,
+				3F891229919330A680651902 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B97A62D6FE3806E39D369477 /* Intents */ = {
+			isa = PBXGroup;
+			children = (
+				D50C76B6409ED04F581AF979 /* SendToPrivateAssistantIntent.swift */,
+			);
+			path = Intents;
+			sourceTree = "<group>";
+		};
+		C292BF85B05B4EE5FF52FC0A /* PrivateAssistantShared */ = {
+			isa = PBXGroup;
+			children = (
+				C09F84491D464FEEC912E830 /* PrivateAssistantAPIClient.swift */,
+				8D0DB947562F2B029B428C3A /* PrivateAssistantConfiguration.swift */,
+				CAE9D19258A1577E142E0E54 /* PrivateAssistantModels.swift */,
+			);
+			path = PrivateAssistantShared;
+			sourceTree = "<group>";
+		};
+		F9A65205C4CAFFE338784DD6 /* PrivateAssistantApp */ = {
+			isa = PBXGroup;
+			children = (
+				090F68135B6614000A2D501F /* ActivityView.swift */,
+				840AB4BC861EF0BA7087A2BF /* AppModel.swift */,
+				E97AD646D9D4AA6E1EE26D18 /* CaptureComposerView.swift */,
+				F0567FAFE533E6E682AED298 /* LedgerView.swift */,
+				FF1F26CB89344B679D9783C0 /* PrivateAssistantApp.swift */,
+				4FA3370119DD226EE707E497 /* RootView.swift */,
+				A90F0A08D4D959185D25321B /* SettingsView.swift */,
+				B97A62D6FE3806E39D369477 /* Intents */,
+			);
+			path = PrivateAssistantApp;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		29FF0484E4362C19EA819D7F /* PrivateAssistantApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3B935D0E951430FF81A2ADF /* Build configuration list for PBXNativeTarget "PrivateAssistantApp" */;
+			buildPhases = (
+				C33A56E5AAF4BC54D472CA43 /* Sources */,
+				867C5EAD96340BAFC4781678 /* Frameworks */,
+				5D19BF55449606C3578EF1BF /* Embed Foundation Extensions */,
+				D4F66438869A4ACDF95E34D9 /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				38E47D0C89DA81AE827C4796 /* PBXTargetDependency */,
+				0422C58B805225C3537A7B43 /* PBXTargetDependency */,
+			);
+			name = PrivateAssistantApp;
+			packageProductDependencies = (
+			);
+			productName = PrivateAssistantApp;
+			productReference = 831C00CD75C6A3DB25354778 /* PrivateAssistantApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		7CD572FE3DB28238E1739E01 /* PrivateAssistantShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 31F5AC7802AC608100C66964 /* Build configuration list for PBXNativeTarget "PrivateAssistantShareExtension" */;
+			buildPhases = (
+				4D51BF5C4D3514E34702E0A7 /* Sources */,
+				F5BAFB7B5D0DA85BA629FB49 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0B06967DE84A5247700745C0 /* PBXTargetDependency */,
+			);
+			name = PrivateAssistantShareExtension;
+			packageProductDependencies = (
+			);
+			productName = PrivateAssistantShareExtension;
+			productReference = 2E3F130AD89B12ECF3D97F77 /* PrivateAssistantShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		96BEF6E3A88E4402A03D1043 /* PrivateAssistantShared */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 440FAF4CD05B9F6C969F7BB3 /* Build configuration list for PBXNativeTarget "PrivateAssistantShared" */;
+			buildPhases = (
+				5828F37532B8CCDE364C5107 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PrivateAssistantShared;
+			packageProductDependencies = (
+			);
+			productName = PrivateAssistantShared;
+			productReference = 3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FB2BE35F77B1B29336865A1F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+			};
+			buildConfigurationList = 2E51E37E26598913B57B6D29 /* Build configuration list for PBXProject "PrivateAssistantMobile" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = A0AE0CD91B5833555B32CB19;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3F891229919330A680651902 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				29FF0484E4362C19EA819D7F /* PrivateAssistantApp */,
+				7CD572FE3DB28238E1739E01 /* PrivateAssistantShareExtension */,
+				96BEF6E3A88E4402A03D1043 /* PrivateAssistantShared */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		4D51BF5C4D3514E34702E0A7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A2A11F040899429AC73489A6 /* ShareViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		5828F37532B8CCDE364C5107 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6B100DAA30583CAB7D6A59CB /* PrivateAssistantAPIClient.swift in Sources */,
+				3629F9E559C8C3B12217692D /* PrivateAssistantConfiguration.swift in Sources */,
+				FC63DB480707F9008116373B /* PrivateAssistantModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C33A56E5AAF4BC54D472CA43 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				757E91830A738B6FCC7AA409 /* ActivityView.swift in Sources */,
+				ACEF4A852BC95E0F2E778C9F /* AppModel.swift in Sources */,
+				FA59A05E7661D2D4CD5AAD82 /* CaptureComposerView.swift in Sources */,
+				D32F22C75297AFFB49036850 /* LedgerView.swift in Sources */,
+				FE41423440B70DA60799B450 /* PrivateAssistantApp.swift in Sources */,
+				ECA375C3DADA26BDA68CF1B4 /* RootView.swift in Sources */,
+				6F89C9DDA503D7F77FF72D23 /* SendToPrivateAssistantIntent.swift in Sources */,
+				B9E303A7CBF5C4932FAB5F90 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0422C58B805225C3537A7B43 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7CD572FE3DB28238E1739E01 /* PrivateAssistantShareExtension */;
+			targetProxy = 0F90DF828D7ACCBBEA747DC9 /* PBXContainerItemProxy */;
+		};
+		0B06967DE84A5247700745C0 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96BEF6E3A88E4402A03D1043 /* PrivateAssistantShared */;
+			targetProxy = A51937C83E28E19C84A919EC /* PBXContainerItemProxy */;
+		};
+		38E47D0C89DA81AE827C4796 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 96BEF6E3A88E4402A03D1043 /* PrivateAssistantShared */;
+			targetProxy = 055C7D1E26E4FB7C9FE81D2D /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		05205AC5603F0E92F8A56E00 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 83LR4566RS;
+				INFOPLIST_FILE = "Configs/PrivateAssistantApp-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		1500186D4A01FEBC7FD28882 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		1AB8B4F12AFE27C2774C4959 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 83LR4566RS;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Configs/PrivateAssistantShared-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.shared;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Debug;
+		};
+		57B10F7DEEEB9D3F55CD74B5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				"DEVELOPMENT_TEAM[sdk=iphoneos*]" = 83LR4566RS;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Configs/PrivateAssistantShared-Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.shared;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+			};
+			name = Release;
+		};
+		7206DB590A11D1E89E0BB03F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = 83LR4566RS;
+				INFOPLIST_FILE = "Configs/PrivateAssistantApp-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.app;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BEF9340C358CDAF8B088B889 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 83LR4566RS;
+				INFOPLIST_FILE = "Configs/PrivateAssistantShareExtension-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.app.share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BFDB02F24C10F0DF7950D4ED /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		DD2A793410306D9A3D1356EC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = 83LR4566RS;
+				INFOPLIST_FILE = "Configs/PrivateAssistantShareExtension-Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.zzh.privateassistant.app.share;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2E51E37E26598913B57B6D29 /* Build configuration list for PBXProject "PrivateAssistantMobile" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BFDB02F24C10F0DF7950D4ED /* Debug */,
+				1500186D4A01FEBC7FD28882 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		31F5AC7802AC608100C66964 /* Build configuration list for PBXNativeTarget "PrivateAssistantShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BEF9340C358CDAF8B088B889 /* Debug */,
+				DD2A793410306D9A3D1356EC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		440FAF4CD05B9F6C969F7BB3 /* Build configuration list for PBXNativeTarget "PrivateAssistantShared" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1AB8B4F12AFE27C2774C4959 /* Debug */,
+				57B10F7DEEEB9D3F55CD74B5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		B3B935D0E951430FF81A2ADF /* Build configuration list for PBXNativeTarget "PrivateAssistantApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7206DB590A11D1E89E0BB03F /* Debug */,
+				05205AC5603F0E92F8A56E00 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FB2BE35F77B1B29336865A1F /* Project object */;
+}

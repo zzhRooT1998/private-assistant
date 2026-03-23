@@ -1,0 +1,60 @@
+name: PrivateAssistantMobile
+options:
+  minimumXcodeGenVersion: 2.38.0
+settings:
+  base:
+    SWIFT_VERSION: 6.0
+    IPHONEOS_DEPLOYMENT_TARGET: 17.0
+schemes:
+  PrivateAssistantApp:
+    build:
+      targets:
+        PrivateAssistantApp: all
+    run:
+      config: Debug
+  PrivateAssistantShareExtension:
+    build:
+      targets:
+        PrivateAssistantShareExtension: all
+    run:
+      config: Debug
+targets:
+  PrivateAssistantShared:
+    type: framework
+    platform: iOS
+    sources:
+      - PrivateAssistantShared
+    info:
+      path: Configs/PrivateAssistantShared-Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zzh.privateassistant.shared
+        SKIP_INSTALL: YES
+  PrivateAssistantApp:
+    type: application
+    platform: iOS
+    sources:
+      - PrivateAssistantApp
+    info:
+      path: Configs/PrivateAssistantApp-Info.plist
+    dependencies:
+      - target: PrivateAssistantShared
+      - target: PrivateAssistantShareExtension
+        embed: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zzh.privateassistant.app
+        TARGETED_DEVICE_FAMILY: 1
+  PrivateAssistantShareExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - PrivateAssistantShareExtension
+    info:
+      path: Configs/PrivateAssistantShareExtension-Info.plist
+    dependencies:
+      - target: PrivateAssistantShared
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.zzh.privateassistant.app.share
+        TARGETED_DEVICE_FAMILY: 1

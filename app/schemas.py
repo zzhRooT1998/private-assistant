@@ -7,9 +7,15 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
-class ReceiptParseResult(BaseModel):
+class ScreenIntentResult(BaseModel):
     intent: str
+    action: str | None = None
     confidence: float | None = Field(default=None, ge=0.0, le=1.0)
+    summary: str | None = None
+    source_app: str | None = None
+    source_type: str | None = None
+    page_url: str | None = None
+    extracted_text: str | None = None
     merchant: str | None = None
     currency: str | None = None
     original_amount: str | None = None
@@ -17,6 +23,15 @@ class ReceiptParseResult(BaseModel):
     actual_amount: str | None = None
     category_guess: str | None = None
     occurred_at: str | None = None
+    todo_title: str | None = None
+    todo_details: str | None = None
+    todo_due_at: str | None = None
+    reference_title: str | None = None
+    reference_summary: str | None = None
+    schedule_title: str | None = None
+    schedule_details: str | None = None
+    schedule_start_at: str | None = None
+    schedule_end_at: str | None = None
 
     @field_validator("original_amount", "discount_amount", "actual_amount", mode="before")
     @classmethod
@@ -31,6 +46,9 @@ class ReceiptParseResult(BaseModel):
         raise TypeError(f"Unsupported amount value: {value!r}")
 
 
+ReceiptParseResult = ScreenIntentResult
+
+
 @dataclass(slots=True)
 class NormalizedLedgerEntry:
     merchant: str | None
@@ -42,11 +60,43 @@ class NormalizedLedgerEntry:
     occurred_at: str | None
 
 
+@dataclass(slots=True)
+class NormalizedTodoEntry:
+    title: str
+    details: str | None
+    due_at: str | None
+    source_app: str | None
+    page_url: str | None
+
+
+@dataclass(slots=True)
+class NormalizedReferenceEntry:
+    title: str
+    summary: str | None
+    page_url: str | None
+    source_app: str | None
+
+
+@dataclass(slots=True)
+class NormalizedScheduleEntry:
+    title: str
+    details: str | None
+    start_at: str
+    end_at: str | None
+    source_app: str | None
+    page_url: str | None
+
+
 class IntakeResponse(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     intent: str
     confidence: float
-    parsed_receipt: ReceiptParseResult | None = None
+    analysis: ScreenIntentResult | None = None
+    parsed_receipt: ScreenIntentResult | None = None
     ledger_entry: dict[str, Any] | None = None
+    todo_entry: dict[str, Any] | None = None
+    reference_entry: dict[str, Any] | None = None
+    schedule_entry: dict[str, Any] | None = None
+    executed_action: str | None = None
     message: str
