@@ -32,10 +32,19 @@ open PrivateAssistantMobile.xcodeproj
 
 ## Backend URL
 
-The default server URL is `http://127.0.0.1:8000`.
+The default server URL is `https://b308-112-10-191-85.ngrok-free.app`.
 
-- Keep it for the iOS Simulator.
-- Replace it with your Mac's LAN IP when testing on a physical iPhone.
+- Replace it with your current tunnel or your Mac's LAN IP if the default tunnel changes.
+
+## Shortcut Setup
+
+Use the screenshot-only shortcut flow on iPhone:
+
+1. Add `Take Screenshot`
+2. Add `Send To Private Assistant`
+3. Pass the screenshot output into the `Screenshot` parameter
+4. Enable `Show When Run` if you want the dialog confirmation
+5. Bind the shortcut to Back Tap if needed
 
 ## Important Gaps
 

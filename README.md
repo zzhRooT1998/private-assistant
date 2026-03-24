@@ -7,7 +7,9 @@ Minimal life-agent MVP that accepts iPhone screenshots, shared text, URLs, and r
 - Receipt image upload through a browser form or API
 - Generic mobile intake for screenshots, shared text, and URLs
 - Multimodal parsing behind an OpenAI-compatible service layer
+- LangChain prompt/parsing layer plus LangGraph orchestration for ranked intent routing
 - Intent routing that can recognize bookkeeping, todo, reference, schedule, or unknown
+- Human-in-the-loop confirmation when the top intent candidates are too close
 - Executable handlers for bookkeeping, todo capture, reference saving, and schedule capture
 - Strict bookkeeping normalization for discount and payable amount
 - SQLite-backed ledger storage with raw model response retention
@@ -43,6 +45,13 @@ APP_DATABASE_URL=ledger.db
   - `source_app`: optional app name such as `Safari` or `WeChat`
   - `source_type`: optional source type such as `screenshot`, `onscreen`, or `share_extension`
   - `captured_at`: optional ISO8601 timestamp
+  Returns either:
+  - an executed result when the top-ranked intent is confident enough
+  - or `requires_confirmation=true` plus `review_id` and top three `ranked_intents`
+- `POST /agent/life/mobile-intake/{review_id}/confirm`
+  Accepts JSON with either:
+  - `selected_intent`: one of the ranked intents returned earlier
+  - `custom_intent`: a manual override such as `bookkeeping`, `todo`, `reference`, `schedule`, `记账`, `待办`, `收藏`, or `日程`
 - `GET /api/ledger`
   Returns recent stored entries.
 - `GET /api/ledger/{id}`
@@ -113,6 +122,10 @@ Response shape:
   "reference_entry": null,
   "schedule_entry": null,
   "executed_action": "create_bookkeeping_entry",
+  "requires_confirmation": false,
+  "review_id": null,
+  "ranked_intents": [],
+  "confirmation_reason": null,
   "message": "Bookkeeping entry created."
 }
 ```

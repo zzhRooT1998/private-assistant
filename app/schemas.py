@@ -6,6 +6,19 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+SUPPORTED_INTENTS = ("bookkeeping", "todo", "reference", "schedule", "unknown")
+
+
+class RankedIntentCandidate(BaseModel):
+    intent: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    reason: str | None = None
+    summary: str | None = None
+
+
+class IntentRankingEnvelope(BaseModel):
+    candidates: list[RankedIntentCandidate]
+
 
 class ScreenIntentResult(BaseModel):
     intent: str
@@ -99,4 +112,30 @@ class IntakeResponse(BaseModel):
     reference_entry: dict[str, Any] | None = None
     schedule_entry: dict[str, Any] | None = None
     executed_action: str | None = None
+    requires_confirmation: bool = False
+    review_id: str | None = None
+    ranked_intents: list[RankedIntentCandidate] = Field(default_factory=list)
+    confirmation_reason: str | None = None
     message: str
+
+
+class ConfirmIntentRequest(BaseModel):
+    selected_intent: str | None = None
+    custom_intent: str | None = None
+
+
+class IntentReview(BaseModel):
+    id: str
+    image_path: str | None = None
+    content_type: str | None = None
+    text_input: str | None = None
+    page_url: str | None = None
+    source_app: str | None = None
+    source_type: str | None = None
+    captured_at: str | None = None
+    ranked_intents: list[RankedIntentCandidate] = Field(default_factory=list)
+    status: str
+    selected_intent: str | None = None
+    confirmation_reason: str | None = None
+    created_at: str
+    updated_at: str

@@ -51,6 +51,23 @@ CREATE TABLE IF NOT EXISTS schedule_entries (
   page_url TEXT,
   raw_model_response TEXT NOT NULL,
   created_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS intent_reviews (
+  id TEXT PRIMARY KEY,
+  image_path TEXT,
+  content_type TEXT,
+  text_input TEXT,
+  page_url TEXT,
+  source_app TEXT,
+  source_type TEXT,
+  captured_at TEXT,
+  ranked_intents TEXT NOT NULL,
+  status TEXT NOT NULL,
+  selected_intent TEXT,
+  confirmation_reason TEXT,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
 )
 """
 
@@ -67,4 +84,13 @@ def init_db(db_path: str | Path) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
     with connect_db(path) as connection:
         connection.executescript(SCHEMA)
+        _ensure_intent_review_columns(connection)
         connection.commit()
+
+
+def _ensure_intent_review_columns(connection: sqlite3.Connection) -> None:
+    existing_columns = {
+        row["name"] for row in connection.execute("PRAGMA table_info(intent_reviews)").fetchall()
+    }
+    if "confirmation_reason" not in existing_columns:
+        connection.execute("ALTER TABLE intent_reviews ADD COLUMN confirmation_reason TEXT")

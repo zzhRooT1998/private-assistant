@@ -4,6 +4,10 @@ import SwiftUI
 struct PrivateAssistantApp: App {
     @StateObject private var model = AppModel()
 
+    init() {
+        AppNotificationManager.shared.configure()
+    }
+
     var body: some Scene {
         WindowGroup {
             RootView()

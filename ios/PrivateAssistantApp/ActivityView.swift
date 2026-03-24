@@ -5,56 +5,63 @@ struct ActivityView: View {
     @EnvironmentObject private var model: AppModel
 
     var body: some View {
+        let strings = model.strings
+
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    HStack(spacing: 12) {
-                        summaryMetric(title: "Todos", value: "\(model.todoEntries.count)", color: .orange)
-                        summaryMetric(title: "Refs", value: "\(model.referenceEntries.count)", color: .blue)
-                        summaryMetric(title: "Schedule", value: "\(model.scheduleEntries.count)", color: .pink)
+            ZStack {
+                Color(red: 0.97, green: 0.97, blue: 0.95)
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        HStack(spacing: 12) {
+                            summaryMetric(title: strings.todos, value: "\(model.todoEntries.count)", color: .orange)
+                            summaryMetric(title: strings.references, value: "\(model.referenceEntries.count)", color: .blue)
+                            summaryMetric(title: strings.schedule, value: "\(model.scheduleEntries.count)", color: .pink)
+                        }
+
+                        if model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
+                            emptyState
+                        } else {
+                            if !model.todoEntries.isEmpty {
+                                activitySection(strings.todos, systemImage: "checklist", tint: .orange) {
+                                    ForEach(model.todoEntries) { entry in
+                                        activityCard(title: entry.title, subtitle: entry.details, meta: entry.dueAt ?? entry.createdAt)
+                                    }
+                                }
+                            }
+
+                            if !model.referenceEntries.isEmpty {
+                                activitySection(strings.references, systemImage: "bookmark", tint: .blue) {
+                                    ForEach(model.referenceEntries) { entry in
+                                        activityCard(title: entry.title, subtitle: entry.summary, meta: entry.pageURL ?? entry.createdAt)
+                                    }
+                                }
+                            }
+
+                            if !model.scheduleEntries.isEmpty {
+                                activitySection(strings.schedule, systemImage: "calendar", tint: .pink) {
+                                    ForEach(model.scheduleEntries) { entry in
+                                        activityCard(title: entry.title, subtitle: entry.details, meta: entry.startAt)
+                                    }
+                                }
+                            }
+                        }
                     }
-
-                    if model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
-                        emptyState
-                    } else {
-                        if !model.todoEntries.isEmpty {
-                            activitySection("Todos", systemImage: "checklist", tint: .orange) {
-                                ForEach(model.todoEntries) { entry in
-                                    activityCard(title: entry.title, subtitle: entry.details, meta: entry.dueAt ?? entry.createdAt)
-                                }
-                            }
-                        }
-
-                        if !model.referenceEntries.isEmpty {
-                            activitySection("References", systemImage: "bookmark", tint: .blue) {
-                                ForEach(model.referenceEntries) { entry in
-                                    activityCard(title: entry.title, subtitle: entry.summary, meta: entry.pageURL ?? entry.createdAt)
-                                }
-                            }
-                        }
-
-                        if !model.scheduleEntries.isEmpty {
-                            activitySection("Schedule", systemImage: "calendar", tint: .pink) {
-                                ForEach(model.scheduleEntries) { entry in
-                                    activityCard(title: entry.title, subtitle: entry.details, meta: entry.startAt)
-                                }
-                            }
-                        }
-                    }
+                    .padding(20)
                 }
-                .padding(20)
+                .refreshable {
+                    await model.reloadActivity()
+                }
             }
-            .background(Color(red: 0.97, green: 0.97, blue: 0.95).ignoresSafeArea())
             .overlay {
                 if model.isRefreshingActivity && model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
                     ProgressView()
                 }
             }
-            .navigationTitle("Activity")
+            .navigationTitle(strings.activityTitle)
             .navigationBarTitleDisplayMode(.large)
-            .refreshable {
-                await model.reloadActivity()
-            }
+            .toolbarBackground(.visible, for: .navigationBar)
             .task {
                 if model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
                     await model.reloadActivity()
@@ -64,13 +71,14 @@ struct ActivityView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 12) {
+        let strings = model.strings
+        return VStack(spacing: 12) {
             Image(systemName: "tray")
                 .font(.system(size: 30))
                 .foregroundStyle(.secondary)
-            Text("No captured activity yet")
+            Text(strings.noActivity)
                 .font(.headline)
-            Text("Send a screenshot or text from the Capture tab and the saved items will appear here.")
+            Text(strings.noActivityHint)
                 .font(.subheadline)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)

@@ -6,7 +6,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.main import create_app, get_vision_service
-from app.schemas import ScreenIntentResult
+from app.schemas import RankedIntentCandidate, ScreenIntentResult
 from app.services.vision import StubVisionIntentService, VisionIntentService
 
 
@@ -144,6 +144,19 @@ def test_returns_502_when_provider_fails(tmp_path):
     app = create_app(settings)
 
     class FailingVisionService:
+        def rank_intents(
+            self,
+            *,
+            image_path: str | Path | None = None,
+            content_type: str | None = None,
+            text_input: str | None = None,
+            page_url: str | None = None,
+            source_app: str | None = None,
+            source_type: str | None = None,
+            top_k: int = 3,
+        ) -> list[RankedIntentCandidate]:
+            raise RuntimeError("provider down")
+
         def parse_input(
             self,
             *,
@@ -153,6 +166,7 @@ def test_returns_502_when_provider_fails(tmp_path):
             page_url: str | None = None,
             source_app: str | None = None,
             source_type: str | None = None,
+            forced_intent: str | None = None,
         ) -> ScreenIntentResult:
             raise RuntimeError("provider down")
 
@@ -389,6 +403,140 @@ def test_vision_service_includes_text_and_url_context(tmp_path):
     assert "Shared text:\nInteresting article" in prompt_text
 
 
+def test_vision_service_extracts_dict_style_response_text(tmp_path):
+    payload = (
+        '{"intent":"unknown","action":"none","confidence":0.3,"summary":"No action.",'
+        '"source_app":null,"source_type":"screenshot","page_url":null,"extracted_text":null,'
+        '"merchant":null,"currency":null,"original_amount":null,"discount_amount":null,"actual_amount":null,'
+        '"todo_title":null,"todo_details":null,"todo_due_at":null,'
+        '"reference_title":null,"reference_summary":null,'
+        '"schedule_title":null,"schedule_details":null,"schedule_start_at":null,"schedule_end_at":null,'
+        '"category_guess":null,"occurred_at":null}'
+    )
+
+    class FakeResponses:
+        def create(self, **kwargs):
+            return {
+                "output": [
+                    {
+                        "content": [
+                            {
+                                "type": "output_text",
+                                "text": payload,
+                            }
+                        ]
+                    }
+                ]
+            }
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.responses = FakeResponses()
+
+    image_path = tmp_path / "capture.jpg"
+    image_path.write_bytes(b"fake-image")
+    service = VisionIntentService(
+        api_key="test-key",
+        base_url="https://example.com/v1",
+        model="gpt-test",
+        client=FakeClient(),
+    )
+
+    result = service.parse_input(image_path=image_path, content_type="image/jpeg")
+
+    assert result.intent == "unknown"
+    assert result.source_type == "screenshot"
+
+
+def test_vision_service_extracts_list_output_text(tmp_path):
+    payload = (
+        '{"intent":"reference","action":"save_reference","confidence":0.7,"summary":"Save item.",'
+        '"source_app":"Photos","source_type":"screenshot","page_url":null,"extracted_text":null,'
+        '"merchant":null,"currency":null,"original_amount":null,"discount_amount":null,"actual_amount":null,'
+        '"todo_title":null,"todo_details":null,"todo_due_at":null,'
+        '"reference_title":"Saved item","reference_summary":"Save item.",'
+        '"schedule_title":null,"schedule_details":null,"schedule_start_at":null,"schedule_end_at":null,'
+        '"category_guess":null,"occurred_at":null}'
+    )
+
+    class FakeResponses:
+        def create(self, **kwargs):
+            return type(
+                "Response",
+                (),
+                {"output_text": [{"text": payload}]},
+            )()
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.responses = FakeResponses()
+
+    image_path = tmp_path / "capture.jpg"
+    image_path.write_bytes(b"fake-image")
+    service = VisionIntentService(
+        api_key="test-key",
+        base_url="https://example.com/v1",
+        model="gpt-test",
+        client=FakeClient(),
+    )
+
+    result = service.parse_input(image_path=image_path, content_type="image/jpeg")
+
+    assert result.intent == "reference"
+    assert result.reference_title == "Saved item"
+
+
+def test_vision_service_uses_chat_completions_for_dashscope(tmp_path):
+    payload = (
+        '{"intent":"bookkeeping","action":"create_bookkeeping_entry","confidence":0.91,"summary":"Receipt saved.",'
+        '"source_app":null,"source_type":"screenshot","page_url":null,"extracted_text":null,'
+        '"merchant":"Manner","currency":"CNY","original_amount":"20.0","discount_amount":null,"actual_amount":"20.0",'
+        '"todo_title":null,"todo_details":null,"todo_due_at":null,'
+        '"reference_title":null,"reference_summary":null,'
+        '"schedule_title":null,"schedule_details":null,"schedule_start_at":null,"schedule_end_at":null,'
+        '"category_guess":"coffee","occurred_at":null}'
+    )
+
+    class FakeChatCompletions:
+        def __init__(self) -> None:
+            self.kwargs = None
+
+        def create(self, **kwargs):
+            self.kwargs = kwargs
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": payload,
+                        }
+                    }
+                ]
+            }
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.chat = type("Chat", (), {"completions": FakeChatCompletions()})()
+            self.responses = None
+
+    image_path = tmp_path / "receipt.png"
+    image_path.write_bytes(b"fake-image")
+    client = FakeClient()
+    service = VisionIntentService(
+        api_key="test-key",
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+        model="qwen3-vl-plus",
+        client=client,
+    )
+
+    result = service.parse_input(image_path=image_path, content_type="image/png")
+
+    assert result.intent == "bookkeeping"
+    assert client.chat.completions.kwargs["model"] == "qwen3-vl-plus"
+    content = client.chat.completions.kwargs["messages"][1]["content"]
+    assert content[0]["type"] == "text"
+    assert content[1]["type"] == "image_url"
+
+
 def test_mobile_intake_creates_reference_entry(tmp_path):
     parsed = ScreenIntentResult(
         intent="reference",
@@ -457,3 +605,123 @@ def test_mobile_intake_creates_schedule_entry(tmp_path):
     schedules_response = client.get("/api/schedules")
     assert schedules_response.status_code == 200
     assert schedules_response.json()[0]["start_at"] == "2026-03-24T15:00:00+08:00"
+
+
+def test_mobile_intake_returns_200_when_intent_cannot_be_normalized(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="schedule",
+        action="schedule_event",
+        confidence=0.64,
+        summary="Maybe this is a meeting.",
+        source_type="screenshot",
+        schedule_title="Possible meeting",
+        schedule_start_at=None,
+    )
+    client = _make_client(tmp_path, parsed)
+
+    response = client.post(
+        "/agent/life/mobile-intake",
+        files={"image": ("capture.png", b"fake-image", "image/png")},
+        data={"source_type": "screenshot"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["intent"] == "schedule"
+    assert data["executed_action"] is None
+    assert data["schedule_entry"] is None
+    assert data["message"] == "Intent detected but not executed yet: schedule."
+
+
+def test_mobile_intake_returns_ranked_intents_for_hitl_confirmation(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="todo",
+        action="create_todo",
+        confidence=0.58,
+        summary="Follow up on this item.",
+        todo_title="Follow up",
+    )
+    ranked_intents = [
+        RankedIntentCandidate(intent="todo", confidence=0.58, reason="Looks actionable."),
+        RankedIntentCandidate(intent="reference", confidence=0.51, reason="Could also be saved."),
+        RankedIntentCandidate(intent="schedule", confidence=0.44, reason="Could imply a reminder."),
+    ]
+    settings = Settings(
+        openai_api_key="test-key",
+        openai_base_url="https://example.com/v1",
+        openai_model="gpt-test",
+        upload_dir=tmp_path / "uploads",
+        database_url=tmp_path / "ledger.db",
+    )
+    app = create_app(settings)
+    app.dependency_overrides[get_vision_service] = lambda: StubVisionIntentService(parsed, ranked_intents=ranked_intents)
+    client = TestClient(app)
+
+    response = client.post(
+        "/agent/life/mobile-intake",
+        files={"image": ("capture.jpg", b"fake-image", "image/jpeg")},
+        data={"source_type": "screenshot"},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["requires_confirmation"] is True
+    assert data["review_id"] is not None
+    assert len(data["ranked_intents"]) == 3
+    assert data["executed_action"] is None
+
+    pending_reviews_response = client.get("/api/intent-reviews")
+    assert pending_reviews_response.status_code == 200
+    pending_reviews = pending_reviews_response.json()
+    assert len(pending_reviews) == 1
+    assert pending_reviews[0]["id"] == data["review_id"]
+    assert pending_reviews[0]["status"] == "pending"
+    assert pending_reviews[0]["confirmation_reason"] is not None
+    assert pending_reviews[0]["ranked_intents"][0]["intent"] == "todo"
+
+
+def test_confirm_mobile_intake_executes_selected_intent(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="todo",
+        action="create_todo",
+        confidence=0.58,
+        summary="Follow up on this item.",
+        todo_title="Follow up",
+    )
+    ranked_intents = [
+        RankedIntentCandidate(intent="todo", confidence=0.58, reason="Looks actionable."),
+        RankedIntentCandidate(intent="reference", confidence=0.51, reason="Could also be saved."),
+        RankedIntentCandidate(intent="schedule", confidence=0.44, reason="Could imply a reminder."),
+    ]
+    settings = Settings(
+        openai_api_key="test-key",
+        openai_base_url="https://example.com/v1",
+        openai_model="gpt-test",
+        upload_dir=tmp_path / "uploads",
+        database_url=tmp_path / "ledger.db",
+    )
+    app = create_app(settings)
+    app.dependency_overrides[get_vision_service] = lambda: StubVisionIntentService(parsed, ranked_intents=ranked_intents)
+    client = TestClient(app)
+
+    intake_response = client.post(
+        "/agent/life/mobile-intake",
+        files={"image": ("capture.jpg", b"fake-image", "image/jpeg")},
+        data={"source_type": "screenshot"},
+    )
+    review_id = intake_response.json()["review_id"]
+
+    confirm_response = client.post(
+        f"/agent/life/mobile-intake/{review_id}/confirm",
+        json={"selected_intent": "todo"},
+    )
+
+    assert confirm_response.status_code == 200
+    data = confirm_response.json()
+    assert data["requires_confirmation"] is False
+    assert data["executed_action"] == "create_todo"
+    assert data["todo_entry"]["title"] == "Follow up"
+
+    pending_reviews_response = client.get("/api/intent-reviews")
+    assert pending_reviews_response.status_code == 200
+    assert pending_reviews_response.json() == []

@@ -92,6 +92,13 @@ public struct ScreenIntentAnalysis: Codable, Equatable, Sendable {
     }
 }
 
+public struct RankedIntentCandidate: Codable, Equatable, Sendable {
+    public let intent: String
+    public let confidence: Double
+    public let reason: String?
+    public let summary: String?
+}
+
 public struct LedgerEntry: Codable, Equatable, Identifiable, Sendable {
     public let id: Int
     public let merchant: String?
@@ -216,6 +223,10 @@ public struct MobileIntakeResponse: Codable, Equatable, Sendable {
     public let referenceEntry: ReferenceEntry?
     public let scheduleEntry: ScheduleEntry?
     public let executedAction: String?
+    public let requiresConfirmation: Bool
+    public let reviewID: String?
+    public let rankedIntents: [RankedIntentCandidate]
+    public let confirmationReason: String?
     public let message: String
 
     enum CodingKeys: String, CodingKey {
@@ -228,6 +239,10 @@ public struct MobileIntakeResponse: Codable, Equatable, Sendable {
         case referenceEntry = "reference_entry"
         case scheduleEntry = "schedule_entry"
         case executedAction = "executed_action"
+        case requiresConfirmation = "requires_confirmation"
+        case reviewID = "review_id"
+        case rankedIntents = "ranked_intents"
+        case confirmationReason = "confirmation_reason"
         case message
     }
 
@@ -241,6 +256,10 @@ public struct MobileIntakeResponse: Codable, Equatable, Sendable {
         referenceEntry: ReferenceEntry?,
         scheduleEntry: ScheduleEntry?,
         executedAction: String?,
+        requiresConfirmation: Bool,
+        reviewID: String?,
+        rankedIntents: [RankedIntentCandidate],
+        confirmationReason: String?,
         message: String
     ) {
         self.intent = intent
@@ -252,7 +271,45 @@ public struct MobileIntakeResponse: Codable, Equatable, Sendable {
         self.referenceEntry = referenceEntry
         self.scheduleEntry = scheduleEntry
         self.executedAction = executedAction
+        self.requiresConfirmation = requiresConfirmation
+        self.reviewID = reviewID
+        self.rankedIntents = rankedIntents
+        self.confirmationReason = confirmationReason
         self.message = message
+    }
+}
+
+public struct IntentReview: Codable, Equatable, Identifiable, Sendable {
+    public let id: String
+    public let imagePath: String?
+    public let contentType: String?
+    public let textInput: String?
+    public let pageURL: String?
+    public let sourceApp: String?
+    public let sourceType: String?
+    public let capturedAt: String?
+    public let rankedIntents: [RankedIntentCandidate]
+    public let status: String
+    public let selectedIntent: String?
+    public let confirmationReason: String?
+    public let createdAt: String
+    public let updatedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case imagePath = "image_path"
+        case contentType = "content_type"
+        case textInput = "text_input"
+        case pageURL = "page_url"
+        case sourceApp = "source_app"
+        case sourceType = "source_type"
+        case capturedAt = "captured_at"
+        case rankedIntents = "ranked_intents"
+        case status
+        case selectedIntent = "selected_intent"
+        case confirmationReason = "confirmation_reason"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 }
 

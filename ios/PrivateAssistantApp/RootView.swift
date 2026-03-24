@@ -1,28 +1,49 @@
 import SwiftUI
 
 struct RootView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some View {
-        TabView {
-            CaptureComposerView()
-                .tabItem {
-                    Label("Capture", systemImage: "sparkles.rectangle.stack")
-                }
+        let strings = model.strings
 
-            ActivityView()
-                .tabItem {
-                    Label("Activity", systemImage: "tray.full")
-                }
+        ZStack {
+            Color(red: 0.97, green: 0.97, blue: 0.95)
+                .ignoresSafeArea()
 
-            LedgerView()
-                .tabItem {
-                    Label("Ledger", systemImage: "list.bullet.rectangle")
-                }
+            TabView {
+                CaptureComposerView()
+                    .tabItem {
+                        Label(strings.captureTab, systemImage: "sparkles.rectangle.stack")
+                    }
 
-            SettingsView()
-                .tabItem {
-                    Label("Settings", systemImage: "gearshape")
-                }
+                ActivityView()
+                    .tabItem {
+                        Label(strings.activityTab, systemImage: "tray.full")
+                    }
+
+                LedgerView()
+                    .tabItem {
+                        Label(strings.ledgerTab, systemImage: "list.bullet.rectangle")
+                    }
+
+                SettingsView()
+                    .tabItem {
+                        Label(strings.settingsTab, systemImage: "gearshape")
+                    }
+            }
         }
         .toolbarBackground(.visible, for: .tabBar)
+        .toolbarBackground(Color(red: 0.97, green: 0.97, blue: 0.95), for: .tabBar)
+        .toolbarColorScheme(.light, for: .tabBar)
+        .task {
+            await model.refreshActivityIfNeeded()
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            guard newPhase == .active else { return }
+            Task {
+                await model.refreshActivityIfNeeded()
+            }
+        }
     }
 }

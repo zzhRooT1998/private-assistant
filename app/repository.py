@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 from app.db import connect_db
 from app.schemas import (
@@ -11,6 +12,7 @@ from app.schemas import (
     NormalizedReferenceEntry,
     NormalizedScheduleEntry,
     NormalizedTodoEntry,
+    RankedIntentCandidate,
 )
 
 
@@ -200,6 +202,100 @@ class LedgerRepository:
     def get_schedule_entry(self, entry_id: int) -> dict[str, Any] | None:
         return self._get_row("schedule_entries", entry_id)
 
+    def create_intent_review(
+        self,
+        *,
+        image_path: str | None,
+        content_type: str | None,
+        text_input: str | None,
+        page_url: str | None,
+        source_app: str | None,
+        source_type: str | None,
+        captured_at: str | None,
+        ranked_intents: list[RankedIntentCandidate],
+        confirmation_reason: str | None,
+    ) -> str:
+        review_id = uuid4().hex
+        now = datetime.now(timezone.utc).isoformat()
+        with connect_db(self.db_path) as connection:
+            connection.execute(
+                """
+                INSERT INTO intent_reviews (
+                    id,
+                    image_path,
+                    content_type,
+                    text_input,
+                    page_url,
+                    source_app,
+                    source_type,
+                    captured_at,
+                    ranked_intents,
+                    status,
+                    selected_intent,
+                    confirmation_reason,
+                    created_at,
+                    updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    review_id,
+                    image_path,
+                    content_type,
+                    text_input,
+                    page_url,
+                    source_app,
+                    source_type,
+                    captured_at,
+                    json.dumps([candidate.model_dump() for candidate in ranked_intents], ensure_ascii=True),
+                    "pending",
+                    None,
+                    confirmation_reason,
+                    now,
+                    now,
+                ),
+            )
+            connection.commit()
+        return review_id
+
+    def get_intent_review(self, review_id: str) -> dict[str, Any] | None:
+        return self._get_row("intent_reviews", review_id, key_column="id")
+
+    def list_intent_reviews(self, *, status: str | None = None, limit: int = 20) -> list[dict[str, Any]]:
+        with connect_db(self.db_path) as connection:
+            if status is None:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM intent_reviews
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (limit,),
+                ).fetchall()
+            else:
+                rows = connection.execute(
+                    """
+                    SELECT * FROM intent_reviews
+                    WHERE status = ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                    """,
+                    (status, limit),
+                ).fetchall()
+        return [self._row_to_dict(row) for row in rows]
+
+    def complete_intent_review(self, review_id: str, *, selected_intent: str) -> None:
+        with connect_db(self.db_path) as connection:
+            connection.execute(
+                """
+                UPDATE intent_reviews
+                SET status = ?, selected_intent = ?, updated_at = ?
+                WHERE id = ?
+                """,
+                ("completed", selected_intent, datetime.now(timezone.utc).isoformat(), review_id),
+            )
+            connection.commit()
+
     def _list_rows(self, table_name: str, *, limit: int) -> list[dict[str, Any]]:
         with connect_db(self.db_path) as connection:
             rows = connection.execute(
@@ -212,10 +308,10 @@ class LedgerRepository:
             ).fetchall()
         return [self._row_to_dict(row) for row in rows]
 
-    def _get_row(self, table_name: str, entry_id: int) -> dict[str, Any] | None:
+    def _get_row(self, table_name: str, entry_id: int | str, *, key_column: str = "id") -> dict[str, Any] | None:
         with connect_db(self.db_path) as connection:
             row = connection.execute(
-                f"SELECT * FROM {table_name} WHERE id = ?",
+                f"SELECT * FROM {table_name} WHERE {key_column} = ?",
                 (entry_id,),
             ).fetchone()
         if row is None:
@@ -228,4 +324,7 @@ class LedgerRepository:
         raw_model_response = item.get("raw_model_response")
         if raw_model_response is not None:
             item["raw_model_response"] = json.loads(raw_model_response)
+        ranked_intents = item.get("ranked_intents")
+        if ranked_intents is not None:
+            item["ranked_intents"] = json.loads(ranked_intents)
         return item

@@ -7,24 +7,13 @@ import SwiftUI
 struct CaptureComposerView: View {
     @EnvironmentObject private var model: AppModel
     @State private var pickerItem: PhotosPickerItem?
+    @State private var customIntentInputs: [String: String] = [:]
 
     var body: some View {
+        let strings = model.strings
+
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 18) {
-                    heroCard
-
-                    if let response = model.lastResponse {
-                        resultCard(response)
-                    }
-
-                    contextCard
-                    screenshotCard
-                    actionCard
-                }
-                .padding(20)
-            }
-            .background(
+            ZStack {
                 LinearGradient(
                     colors: [
                         Color(red: 0.99, green: 0.96, blue: 0.93),
@@ -34,22 +23,42 @@ struct CaptureComposerView: View {
                     endPoint: .bottomTrailing
                 )
                 .ignoresSafeArea()
-            )
-            .navigationTitle("Capture")
+
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 18) {
+                        heroCard
+
+                        if !model.pendingIntentReviews.isEmpty {
+                            pendingReviewSection
+                        }
+
+                        if let response = model.lastResponse {
+                            resultCard(response)
+                        }
+
+                        contextCard
+                        screenshotCard
+                        actionCard
+                    }
+                    .padding(20)
+                }
+            }
+            .navigationTitle(strings.captureTitle)
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(.visible, for: .navigationBar)
             .task {
                 if model.totalActivityCount == 0 {
                     await model.reloadActivity()
                 }
             }
-            .alert("Request Failed", isPresented: Binding(get: {
+            .alert(strings.requestFailed, isPresented: Binding(get: {
                 model.errorMessage != nil
             }, set: { isPresented in
                 if !isPresented {
                     model.errorMessage = nil
                 }
             })) {
-                Button("OK", role: .cancel) {
+                Button(strings.ok, role: .cancel) {
                     model.errorMessage = nil
                 }
             } message: {
@@ -59,17 +68,19 @@ struct CaptureComposerView: View {
     }
 
     private var heroCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Turn a screen into an action")
+        let strings = model.strings
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text(strings.heroTitle)
                 .font(.system(.title2, design: .rounded, weight: .bold))
-            Text("Paste text, attach a screenshot, or drop in a page URL. The assistant will classify the capture and execute bookkeeping, todo, reference, or schedule workflows.")
+            Text(strings.heroDescription)
                 .font(.subheadline)
                 .foregroundStyle(.white.opacity(0.82))
             HStack(spacing: 10) {
-                badge("Live Intake", systemImage: "sparkles")
-                badge(model.sourceType.displayName, systemImage: "app.connected.to.app.below.fill")
+                badge(strings.liveIntake, systemImage: "sparkles")
+                badge(strings.localizedSourceType(model.sourceType), systemImage: "app.connected.to.app.below.fill")
                 if model.totalActivityCount > 0 {
-                    badge("\(model.totalActivityCount) Saved", systemImage: "tray.full.fill")
+                    badge(strings.savedCount(model.totalActivityCount), systemImage: "tray.full.fill")
                 }
             }
         }
@@ -91,15 +102,17 @@ struct CaptureComposerView: View {
     }
 
     private var contextCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            sectionHeader("Context", systemImage: "text.bubble")
+        let strings = model.strings
 
-            inputLabel("Shared Text")
-            TextField("Paste message text or notes", text: $model.textInput, axis: .vertical)
+        return VStack(alignment: .leading, spacing: 14) {
+            sectionHeader(strings.contextSection, systemImage: "text.bubble")
+
+            inputLabel(strings.sharedText)
+            TextField(strings.sharedTextPlaceholder, text: $model.textInput, axis: .vertical)
                 .lineLimit(4...8)
                 .appInputStyle()
 
-            inputLabel("Page URL")
+            inputLabel(strings.pageURL)
             TextField("https://example.com/article", text: $model.pageURLString)
                 .keyboardType(.URL)
                 .textInputAutocapitalization(.never)
@@ -108,16 +121,16 @@ struct CaptureComposerView: View {
 
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 8) {
-                    inputLabel("Source App")
-                    TextField("Safari, WeChat, Photos", text: $model.sourceApp)
+                    inputLabel(strings.sourceApp)
+                    TextField(strings.sourceAppPlaceholder, text: $model.sourceApp)
                         .appInputStyle()
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    inputLabel("Source Type")
-                    Picker("Source Type", selection: $model.sourceType) {
+                    inputLabel(strings.sourceType)
+                    Picker(strings.sourceType, selection: $model.sourceType) {
                         ForEach(SourceType.allCases) { sourceType in
-                            Text(sourceType.displayName).tag(sourceType)
+                            Text(strings.localizedSourceType(sourceType)).tag(sourceType)
                         }
                     }
                     .pickerStyle(.menu)
@@ -136,15 +149,16 @@ struct CaptureComposerView: View {
     }
 
     private var screenshotCard: some View {
+        let strings = model.strings
         let hasPreviewImage = model.previewImage != nil
 
         return VStack(alignment: .leading, spacing: 14) {
-            sectionHeader("Screenshot", systemImage: "photo.on.rectangle")
+            sectionHeader(strings.screenshotSection, systemImage: "photo.on.rectangle")
 
             PhotosPicker(selection: $pickerItem, matching: .images) {
                 HStack {
                     Image(systemName: "photo.badge.plus")
-                    Text(hasPreviewImage ? "Replace Screenshot" : "Choose Screenshot")
+                    Text(hasPreviewImage ? strings.replaceScreenshot : strings.chooseScreenshot)
                         .fontWeight(.semibold)
                     Spacer()
                 }
@@ -170,7 +184,7 @@ struct CaptureComposerView: View {
                     .frame(maxHeight: 280)
                     .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                     .overlay(alignment: .topTrailing) {
-                        Text("Attached")
+                        Text(strings.attached)
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -179,17 +193,23 @@ struct CaptureComposerView: View {
                             .padding(12)
                     }
             } else {
-                Text("Attach a receipt, article page, map, or a message screenshot.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(strings.screenshotHint)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    Text(strings.queuedShortcutNotice)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
         }
         .captureCardStyle()
     }
 
     private var actionCard: some View {
+        let strings = model.strings
         return VStack(alignment: .leading, spacing: 14) {
-            sectionHeader("Actions", systemImage: "paperplane")
+            sectionHeader(strings.actionsSection, systemImage: "paperplane")
 
             Button {
                 Task {
@@ -202,7 +222,7 @@ struct CaptureComposerView: View {
                             .tint(.white)
                     } else {
                         Image(systemName: "arrow.up.circle.fill")
-                        Text("Send To Assistant")
+                        Text(strings.sendToAssistant)
                             .fontWeight(.semibold)
                     }
                 }
@@ -214,7 +234,7 @@ struct CaptureComposerView: View {
             }
             .disabled(model.isSubmitting || !model.canSubmit)
 
-            Button("Clear Draft", role: .destructive) {
+            Button(strings.clearDraft, role: .destructive) {
                 model.clearComposer()
                 pickerItem = nil
             }
@@ -223,17 +243,18 @@ struct CaptureComposerView: View {
     }
 
     private func resultCard(_ response: MobileIntakeResponse) -> some View {
+        let strings = model.strings
         return VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Latest Result")
+                    Text(strings.latestResult)
                         .font(.headline)
                     Text(response.message)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Text(response.intent.capitalized)
+                Text(strings.localizedIntent(response.intent))
                     .font(.caption.weight(.bold))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 6)
@@ -247,18 +268,24 @@ struct CaptureComposerView: View {
                     .font(.body)
             }
 
+            if response.requiresConfirmation {
+                Text(response.confirmationReason ?? strings.pendingDecisionSubtitle)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+
             HStack(spacing: 10) {
-                metricPill(title: "Confidence", value: String(format: "%.0f%%", response.confidence * 100))
+                metricPill(title: strings.confidence, value: String(format: "%.0f%%", response.confidence * 100))
                 if let action = response.executedAction {
-                    metricPill(title: "Action", value: action.replacingOccurrences(of: "_", with: " "))
+                    metricPill(title: strings.actionLabel, value: action.replacingOccurrences(of: "_", with: " "))
                 }
                 if let amount = response.analysis?.actualAmount {
-                    metricPill(title: "Amount", value: amount)
+                    metricPill(title: strings.amountLabel, value: amount)
                 }
             }
 
             if let sourceApp = response.analysis?.sourceApp, !sourceApp.isEmpty {
-                LabeledContent("Source", value: sourceApp)
+                LabeledContent(strings.sourceLabel, value: sourceApp)
             }
             if let url = response.analysis?.pageURL, !url.isEmpty {
                 Text(url)
@@ -268,6 +295,147 @@ struct CaptureComposerView: View {
             }
         }
         .captureCardStyle(background: .white)
+    }
+
+    private var pendingReviewSection: some View {
+        let strings = model.strings
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(strings.pendingDecisionTitle)
+                        .font(.headline)
+                    Text(strings.pendingDecisionSubtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(strings.refreshPendingReviews) {
+                    Task {
+                        await model.reloadActivity()
+                    }
+                }
+                .buttonStyle(.bordered)
+            }
+
+            ForEach(Array(model.pendingIntentReviews.prefix(3))) { review in
+                pendingReviewCard(review)
+            }
+        }
+        .captureCardStyle(background: Color.white)
+    }
+
+    private func pendingReviewCard(_ review: IntentReview) -> some View {
+        let strings = model.strings
+        let isConfirming = model.confirmingReviewID == review.id
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(strings.suggestedIntents)
+                        .font(.headline)
+                    Text(review.confirmationReason ?? strings.pendingDecisionSubtitle)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Text(review.sourceApp ?? strings.localizedSourceType(review.sourceType))
+                    .font(.caption.weight(.semibold))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.95, green: 0.93, blue: 0.90))
+                    .clipShape(Capsule())
+            }
+
+            if let contextSummary = pendingReviewContext(review) {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(strings.pendingReviewContext)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(contextSummary)
+                        .font(.subheadline)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                ForEach(Array(review.rankedIntents.prefix(3)), id: \.intent) { candidate in
+                    Button {
+                        Task {
+                            await model.confirmIntentReview(review, selectedIntent: candidate.intent)
+                        }
+                    } label: {
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(strings.localizedIntent(candidate.intent))
+                                    .font(.headline)
+                                    .foregroundStyle(.primary)
+                                if let summary = candidate.summary ?? candidate.reason {
+                                    Text(summary)
+                                        .font(.footnote)
+                                        .foregroundStyle(.secondary)
+                                        .multilineTextAlignment(.leading)
+                                }
+                            }
+                            Spacer()
+                            Text(String(format: "%.0f%%", candidate.confidence * 100))
+                                .font(.caption.weight(.bold))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(intentColor(candidate.intent).opacity(0.14))
+                                .foregroundStyle(intentColor(candidate.intent))
+                                .clipShape(Capsule())
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(isConfirming)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 10) {
+                inputLabel(strings.customIntentTitle)
+                TextField(strings.customIntentPlaceholder, text: customIntentBinding(for: review.id))
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .appInputStyle()
+
+                Button {
+                    Task {
+                        await model.confirmIntentReview(
+                            review,
+                            customIntent: customIntentInputs[review.id]?.trimmingCharacters(in: .whitespacesAndNewlines)
+                        )
+                        customIntentInputs[review.id] = ""
+                    }
+                } label: {
+                    HStack {
+                        if isConfirming {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "checkmark.seal.fill")
+                            Text(strings.confirmCustomIntent)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color(red: 0.23, green: 0.36, blue: 0.55))
+                    .foregroundStyle(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+                .disabled(isConfirming || normalizedCustomIntent(for: review.id) == nil)
+            }
+        }
+        .padding(18)
+        .background(Color(red: 0.99, green: 0.98, blue: 0.96))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color.black.opacity(0.05), lineWidth: 1)
+        )
     }
 
     private func badge(_ title: String, systemImage: String) -> some View {
@@ -288,6 +456,36 @@ struct CaptureComposerView: View {
         Text(title)
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
+    }
+
+    private func customIntentBinding(for reviewID: String) -> Binding<String> {
+        Binding(
+            get: { customIntentInputs[reviewID] ?? "" },
+            set: { customIntentInputs[reviewID] = $0 }
+        )
+    }
+
+    private func normalizedCustomIntent(for reviewID: String) -> String? {
+        let rawValue = customIntentInputs[reviewID]
+        let trimmed = rawValue?.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed?.isEmpty == false ? trimmed : nil
+    }
+
+    private func pendingReviewContext(_ review: IntentReview) -> String? {
+        let candidates = [review.textInput, review.pageURL, review.capturedAt]
+        var pieces: [String] = []
+        for value in candidates {
+            guard let value, !value.isEmpty else {
+                continue
+            }
+            pieces.append(value)
+        }
+
+        guard !pieces.isEmpty else {
+            return nil
+        }
+
+        return pieces.joined(separator: "\n")
     }
 
     private func metricPill(title: String, value: String) -> some View {
