@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		15E1726E48BDE94BADF25F18 /* SpeechCaptureService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178ECC431F526FD02ADC8487 /* SpeechCaptureService.swift */; };
 		3629F9E559C8C3B12217692D /* PrivateAssistantConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D0DB947562F2B029B428C3A /* PrivateAssistantConfiguration.swift */; };
 		3F5AD8698B354CEE5FACFE70 /* PrivateAssistantShared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */; };
 		4CF17BF08A47B2DFBA38EAC6 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AA03EB96C2BAE455053E5EE /* AppLanguage.swift */; };
@@ -80,6 +81,7 @@
 /* Begin PBXFileReference section */
 		02E5B69D38FA59A61B637F15 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		090F68135B6614000A2D501F /* ActivityView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityView.swift; sourceTree = "<group>"; };
+		178ECC431F526FD02ADC8487 /* SpeechCaptureService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechCaptureService.swift; sourceTree = "<group>"; };
 		2E3F130AD89B12ECF3D97F77 /* PrivateAssistantShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PrivateAssistantShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		3438A8235AD656D46BC889CE /* PrivateAssistantShared.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = PrivateAssistantShared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		4FA3370119DD226EE707E497 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -177,6 +179,7 @@
 				FF1F26CB89344B679D9783C0 /* PrivateAssistantApp.swift */,
 				4FA3370119DD226EE707E497 /* RootView.swift */,
 				A90F0A08D4D959185D25321B /* SettingsView.swift */,
+				178ECC431F526FD02ADC8487 /* SpeechCaptureService.swift */,
 				B97A62D6FE3806E39D369477 /* Intents */,
 			);
 			path = PrivateAssistantApp;
@@ -318,6 +321,7 @@
 				ECA375C3DADA26BDA68CF1B4 /* RootView.swift in Sources */,
 				6F89C9DDA503D7F77FF72D23 /* SendToPrivateAssistantIntent.swift in Sources */,
 				B9E303A7CBF5C4932FAB5F90 /* SettingsView.swift in Sources */,
+				15E1726E48BDE94BADF25F18 /* SpeechCaptureService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -46,6 +46,24 @@ struct AppStrings {
     var contextSection: String { localized(en: "Context", zh: "上下文") }
     var sharedText: String { localized(en: "Shared Text", zh: "共享文本") }
     var sharedTextPlaceholder: String { localized(en: "Paste message text or notes", zh: "粘贴消息文本或备注") }
+    var speechSection: String { localized(en: "Voice Command", zh: "语音指令") }
+    var speechHint: String {
+        localized(
+            en: "Record a short spoken instruction. When valid speech is present, it overrides conflicting screenshot context.",
+            zh: "录一小段口头指令。只要语音足够明确，它会优先于冲突的截图上下文。"
+        )
+    }
+    var speechTranscript: String { localized(en: "Transcript", zh: "转写内容") }
+    var speechPlaceholder: String { localized(en: "No voice command yet", zh: "还没有语音指令") }
+    var startRecording: String { localized(en: "Start Recording", zh: "开始录音") }
+    var stopRecording: String { localized(en: "Stop Recording", zh: "停止录音") }
+    var recordingNow: String { localized(en: "Recording…", zh: "录音中…") }
+    var speechPriorityNote: String {
+        localized(
+            en: "Explicit speech commands take priority over the screen when intent conflicts.",
+            zh: "当意图冲突时，明确的语音指令优先于屏幕内容。"
+        )
+    }
     var pageURL: String { localized(en: "Page URL", zh: "页面链接") }
     var sourceApp: String { localized(en: "Source App", zh: "来源应用") }
     var sourceAppPlaceholder: String { localized(en: "Safari, WeChat, Photos", zh: "Safari、微信、照片") }

@@ -37,6 +37,7 @@ struct CaptureComposerView: View {
                         }
 
                         contextCard
+                        speechCard
                         screenshotCard
                         actionCard
                     }
@@ -202,6 +203,77 @@ struct CaptureComposerView: View {
                         .foregroundStyle(.secondary)
                 }
             }
+        }
+        .captureCardStyle()
+    }
+
+    private var speechCard: some View {
+        let strings = model.strings
+
+        return VStack(alignment: .leading, spacing: 14) {
+            sectionHeader(strings.speechSection, systemImage: "waveform.badge.mic")
+
+            Text(strings.speechHint)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            Button {
+                Task {
+                    await model.toggleSpeechCapture()
+                }
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: model.isRecordingSpeech ? "stop.circle.fill" : "mic.circle.fill")
+                    Text(model.isRecordingSpeech ? strings.stopRecording : strings.startRecording)
+                        .fontWeight(.semibold)
+                    Spacer()
+                    if model.isRecordingSpeech {
+                        Text(strings.recordingNow)
+                            .font(.caption.weight(.bold))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.14))
+                            .foregroundStyle(.red)
+                            .clipShape(Capsule())
+                    }
+                }
+                .padding(14)
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 8) {
+                inputLabel(strings.speechTranscript)
+                if model.speechText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text(strings.speechPlaceholder)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(Color.white.opacity(0.72))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                } else {
+                    Text(model.speechText)
+                        .font(.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(14)
+                        .background(Color.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.black.opacity(0.06), lineWidth: 1)
+                        )
+                }
+            }
+
+            Text(strings.speechPriorityNote)
+                .font(.footnote)
+                .foregroundStyle(Color(red: 0.43, green: 0.27, blue: 0.11))
         }
         .captureCardStyle()
     }
@@ -472,7 +544,7 @@ struct CaptureComposerView: View {
     }
 
     private func pendingReviewContext(_ review: IntentReview) -> String? {
-        let candidates = [review.textInput, review.pageURL, review.capturedAt]
+        let candidates = [review.speechText, review.textInput, review.pageURL, review.capturedAt]
         var pieces: [String] = []
         for value in candidates {
             guard let value, !value.isEmpty else {

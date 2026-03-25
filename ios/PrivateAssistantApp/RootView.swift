@@ -40,9 +40,12 @@ struct RootView: View {
             await model.refreshActivityIfNeeded()
         }
         .onChange(of: scenePhase) { _, newPhase in
-            guard newPhase == .active else { return }
-            Task {
-                await model.refreshActivityIfNeeded()
+            if newPhase == .active {
+                Task {
+                    await model.refreshActivityIfNeeded()
+                }
+            } else {
+                model.stopSpeechCapture()
             }
         }
     }

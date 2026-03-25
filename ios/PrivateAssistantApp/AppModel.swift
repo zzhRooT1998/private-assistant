@@ -13,6 +13,8 @@ final class AppModel: ObservableObject {
     @Published var baseURLString: String
     @Published var language: AppLanguage
     @Published var textInput = ""
+    @Published var speechText = ""
+    @Published var speechConfidence: Double?
     @Published var pageURLString = ""
     @Published var sourceApp = ""
     @Published var sourceType: SourceType = .manual
@@ -26,6 +28,7 @@ final class AppModel: ObservableObject {
     @Published var scheduleEntries: [ScheduleEntry] = []
     @Published var pendingIntentReviews: [IntentReview] = []
     @Published var isSubmitting = false
+    @Published var isRecordingSpeech = false
     @Published var isRefreshingActivity = false
     @Published var confirmingReviewID: String?
     @Published var errorMessage: String?
@@ -33,6 +36,7 @@ final class AppModel: ObservableObject {
     private let configurationStore: ConfigurationStore
     private let client: PrivateAssistantAPIClient
     private let notificationManager: AppNotificationManager
+    private let speechCaptureService = SpeechCaptureService()
     private let iso8601Formatter = ISO8601DateFormatter()
     private var lastActivityReloadAt: Date?
 
@@ -80,7 +84,10 @@ final class AppModel: ObservableObject {
     }
 
     func clearComposer() {
+        stopSpeechCapture()
         textInput = ""
+        speechText = ""
+        speechConfidence = nil
         pageURLString = ""
         sourceApp = ""
         sourceType = .manual
@@ -90,6 +97,7 @@ final class AppModel: ObservableObject {
     }
 
     func submitCapture() async {
+        stopSpeechCapture()
         isSubmitting = true
         errorMessage = nil
         defer { isSubmitting = false }
@@ -101,6 +109,8 @@ final class AppModel: ObservableObject {
                 imageFilename: selectedImageFilename,
                 imageContentType: selectedImageContentType,
                 textInput: textInput,
+                speechText: speechText,
+                speechConfidence: speechConfidence,
                 pageURL: pageURLString,
                 sourceApp: sourceApp,
                 sourceType: sourceType.rawValue,
@@ -200,6 +210,30 @@ final class AppModel: ObservableObject {
         }
     }
 
+    func toggleSpeechCapture() async {
+        if isRecordingSpeech {
+            stopSpeechCapture()
+            return
+        }
+
+        errorMessage = nil
+        do {
+            try await speechCaptureService.startTranscribing(localeIdentifier: language.rawValue) { [weak self] text, confidence in
+                self?.speechText = text
+                self?.speechConfidence = confidence
+            }
+            isRecordingSpeech = true
+        } catch {
+            isRecordingSpeech = false
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    func stopSpeechCapture() {
+        speechCaptureService.stopTranscribing()
+        isRecordingSpeech = false
+    }
+
     var previewImage: UIImage? {
         guard let selectedImageData else { return nil }
         return UIImage(data: selectedImageData)
@@ -208,6 +242,7 @@ final class AppModel: ObservableObject {
     var canSubmit: Bool {
         selectedImageData != nil ||
         !textInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !speechText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
         !pageURLString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
