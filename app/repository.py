@@ -208,6 +208,8 @@ class LedgerRepository:
         image_path: str | None,
         content_type: str | None,
         text_input: str | None,
+        speech_text: str | None,
+        speech_confidence: float | None,
         page_url: str | None,
         source_app: str | None,
         source_type: str | None,
@@ -225,6 +227,8 @@ class LedgerRepository:
                     image_path,
                     content_type,
                     text_input,
+                    speech_text,
+                    speech_confidence,
                     page_url,
                     source_app,
                     source_type,
@@ -236,13 +240,15 @@ class LedgerRepository:
                     created_at,
                     updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     review_id,
                     image_path,
                     content_type,
                     text_input,
+                    speech_text,
+                    speech_confidence,
                     page_url,
                     source_app,
                     source_type,

@@ -150,6 +150,8 @@ def test_returns_502_when_provider_fails(tmp_path):
             image_path: str | Path | None = None,
             content_type: str | None = None,
             text_input: str | None = None,
+            speech_text: str | None = None,
+            speech_confidence: float | None = None,
             page_url: str | None = None,
             source_app: str | None = None,
             source_type: str | None = None,
@@ -163,6 +165,8 @@ def test_returns_502_when_provider_fails(tmp_path):
             image_path: str | Path | None = None,
             content_type: str | None = None,
             text_input: str | None = None,
+            speech_text: str | None = None,
+            speech_confidence: float | None = None,
             page_url: str | None = None,
             source_app: str | None = None,
             source_type: str | None = None,
@@ -356,7 +360,7 @@ def test_mobile_intake_requires_payload(tmp_path):
     response = client.post("/agent/life/mobile-intake", data={})
 
     assert response.status_code == 400
-    assert response.json()["detail"] == "Provide at least one of image, text_input, or page_url"
+    assert response.json()["detail"] == "Provide at least one of image, text_input, speech_text, or page_url"
 
 
 def test_vision_service_includes_text_and_url_context(tmp_path):
@@ -401,6 +405,48 @@ def test_vision_service_includes_text_and_url_context(tmp_path):
     assert "Source app: Safari" in prompt_text
     assert "Page URL: https://example.com/article" in prompt_text
     assert "Shared text:\nInteresting article" in prompt_text
+
+
+def test_vision_service_includes_speech_context_and_prioritizes_it(tmp_path):
+    payload = (
+        '{"intent":"bookkeeping","action":"create_bookkeeping_entry","confidence":0.92,"summary":"Log the payment.",'
+        '"source_app":"Messages","source_type":"screenshot","page_url":null,"extracted_text":null,'
+        '"speech_text":"帮我记这笔账","speech_confidence":0.93,'
+        '"merchant":"Store","currency":"CNY","original_amount":"50","discount_amount":null,"actual_amount":"50",'
+        '"category_guess":"shopping","occurred_at":null}'
+    )
+
+    class FakeResponses:
+        def __init__(self) -> None:
+            self.kwargs = None
+
+        def create(self, **kwargs):
+            self.kwargs = kwargs
+            return type("Response", (), {"output_text": payload})()
+
+    class FakeClient:
+        def __init__(self) -> None:
+            self.responses = FakeResponses()
+
+    service = VisionIntentService(
+        api_key="test-key",
+        base_url="https://example.com/v1",
+        model="gpt-test",
+        client=FakeClient(),
+    )
+
+    result = service.parse_input(
+        text_input="random chat",
+        speech_text="帮我记这笔账",
+        speech_confidence=0.93,
+        source_app="Messages",
+        source_type="screenshot",
+    )
+
+    assert result.intent == "bookkeeping"
+    prompt_text = service.client.responses.kwargs["input"][1]["content"][0]["text"]
+    assert "Spoken command (primary intent signal, confidence=0.93):" in prompt_text
+    assert "帮我记这笔账" in prompt_text
 
 
 def test_vision_service_extracts_dict_style_response_text(tmp_path):
@@ -678,6 +724,54 @@ def test_mobile_intake_returns_ranked_intents_for_hitl_confirmation(tmp_path):
     assert pending_reviews[0]["status"] == "pending"
     assert pending_reviews[0]["confirmation_reason"] is not None
     assert pending_reviews[0]["ranked_intents"][0]["intent"] == "todo"
+
+
+def test_explicit_speech_command_overrides_ambiguous_visual_hitl(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="bookkeeping",
+        action="create_bookkeeping_entry",
+        confidence=0.58,
+        summary="Log this expense.",
+        merchant="Store",
+        currency="CNY",
+        actual_amount="32.00",
+    )
+    ranked_intents = [
+        RankedIntentCandidate(intent="todo", confidence=0.58, reason="Could be a follow-up."),
+        RankedIntentCandidate(intent="bookkeeping", confidence=0.57, reason="Could also be an expense."),
+        RankedIntentCandidate(intent="schedule", confidence=0.45, reason="Could become a reminder."),
+    ]
+    settings = Settings(
+        openai_api_key="test-key",
+        openai_base_url="https://example.com/v1",
+        openai_model="gpt-test",
+        upload_dir=tmp_path / "uploads",
+        database_url=tmp_path / "ledger.db",
+    )
+    app = create_app(settings)
+    app.dependency_overrides[get_vision_service] = lambda: StubVisionIntentService(parsed, ranked_intents=ranked_intents)
+    client = TestClient(app)
+
+    response = client.post(
+        "/agent/life/mobile-intake",
+        files={"image": ("capture.jpg", b"fake-image", "image/jpeg")},
+        data={
+            "speech_text": "帮我记这笔账",
+            "speech_confidence": "0.93",
+            "source_type": "screenshot",
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["requires_confirmation"] is False
+    assert data["intent"] == "bookkeeping"
+    assert data["executed_action"] == "create_bookkeeping_entry"
+    assert data["ledger_entry"]["merchant"] == "Store"
+
+    pending_reviews_response = client.get("/api/intent-reviews")
+    assert pending_reviews_response.status_code == 200
+    assert pending_reviews_response.json() == []
 
 
 def test_confirm_mobile_intake_executes_selected_intent(tmp_path):

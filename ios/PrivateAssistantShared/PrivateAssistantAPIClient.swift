@@ -169,6 +169,8 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         let endpoint = try makeURL(path: "agent/life/mobile-intake")
         let multipart = MultipartFormData()
         multipart.addField(named: "text_input", value: payload.textInput)
+        multipart.addField(named: "speech_text", value: payload.speechText)
+        multipart.addField(named: "speech_confidence", value: payload.speechConfidence.map { String($0) })
         multipart.addField(named: "page_url", value: payload.pageURL)
         multipart.addField(named: "source_app", value: payload.sourceApp)
         multipart.addField(named: "source_type", value: payload.sourceType)

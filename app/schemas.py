@@ -29,6 +29,8 @@ class ScreenIntentResult(BaseModel):
     source_type: str | None = None
     page_url: str | None = None
     extracted_text: str | None = None
+    speech_text: str | None = None
+    speech_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     merchant: str | None = None
     currency: str | None = None
     original_amount: str | None = None
@@ -129,6 +131,8 @@ class IntentReview(BaseModel):
     image_path: str | None = None
     content_type: str | None = None
     text_input: str | None = None
+    speech_text: str | None = None
+    speech_confidence: float | None = Field(default=None, ge=0.0, le=1.0)
     page_url: str | None = None
     source_app: str | None = None
     source_type: str | None = None

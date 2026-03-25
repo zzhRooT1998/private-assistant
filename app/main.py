@@ -144,6 +144,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def mobile_intake(
         image: UploadFile | None = File(default=None),
         text_input: str | None = Form(default=None),
+        speech_text: str | None = Form(default=None),
+        speech_confidence: float | None = Form(default=None),
         page_url: str | None = Form(default=None),
         source_app: str | None = Form(default=None),
         source_type: str | None = Form(default=None),
@@ -157,6 +159,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             workflow=workflow,
             image=image,
             text_input=text_input,
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
             page_url=page_url,
             source_app=source_app,
             source_type=source_type,
@@ -183,6 +187,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 image_path=review.get("image_path"),
                 content_type=review.get("content_type"),
                 text_input=review.get("text_input"),
+                speech_text=review.get("speech_text"),
+                speech_confidence=review.get("speech_confidence"),
                 page_url=review.get("page_url"),
                 source_app=review.get("source_app"),
                 source_type=review.get("source_type"),
@@ -286,13 +292,15 @@ def _process_intake(
     workflow: IntentWorkflowService,
     image: UploadFile | None = None,
     text_input: str | None = None,
+    speech_text: str | None = None,
+    speech_confidence: float | None = None,
     page_url: str | None = None,
     source_app: str | None = None,
     source_type: str | None = None,
     captured_at: str | None = None,
 ) -> IntakeResponse:
-    if image is None and not any([_has_text(text_input), _has_text(page_url)]):
-        raise HTTPException(status_code=400, detail="Provide at least one of image, text_input, or page_url")
+    if image is None and not any([_has_text(text_input), _has_text(speech_text), _has_text(page_url)]):
+        raise HTTPException(status_code=400, detail="Provide at least one of image, text_input, speech_text, or page_url")
 
     saved_path = None
     content_type = None
@@ -312,6 +320,8 @@ def _process_intake(
             image_path=str(saved_path) if saved_path else None,
             content_type=content_type,
             text_input=merged_text_input,
+            speech_text=_normalize_optional_text(speech_text),
+            speech_confidence=_normalize_speech_confidence(speech_confidence),
             page_url=normalized_page_url,
             source_app=normalized_source_app,
             source_type=normalized_source_type,
@@ -328,6 +338,8 @@ def _process_intake(
             image_path=str(saved_path) if saved_path else None,
             content_type=content_type,
             text_input=merged_text_input,
+            speech_text=_normalize_optional_text(speech_text),
+            speech_confidence=_normalize_speech_confidence(speech_confidence),
             page_url=normalized_page_url,
             source_app=normalized_source_app,
             source_type=normalized_source_type,
@@ -380,6 +392,12 @@ def _normalize_optional_text(value: str | None) -> str | None:
 
 def _has_text(value: str | None) -> bool:
     return _normalize_optional_text(value) is not None
+
+
+def _normalize_speech_confidence(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return max(0.0, min(1.0, value))
 
 
 def _execute_intent(

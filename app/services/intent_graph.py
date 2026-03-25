@@ -12,10 +12,13 @@ class IntentWorkflowState(TypedDict, total=False):
     image_path: str | None
     content_type: str | None
     text_input: str | None
+    speech_text: str | None
+    speech_confidence: float | None
     page_url: str | None
     source_app: str | None
     source_type: str | None
     forced_intent: str | None
+    speech_forced_intent: str | None
     ranked_intents: list[RankedIntentCandidate]
     requires_confirmation: bool
     confirmation_reason: str | None
@@ -46,6 +49,8 @@ class IntentWorkflowService:
         image_path: str | None = None,
         content_type: str | None = None,
         text_input: str | None = None,
+        speech_text: str | None = None,
+        speech_confidence: float | None = None,
         page_url: str | None = None,
         source_app: str | None = None,
         source_type: str | None = None,
@@ -55,6 +60,8 @@ class IntentWorkflowService:
             "image_path": image_path,
             "content_type": content_type,
             "text_input": text_input,
+            "speech_text": speech_text,
+            "speech_confidence": speech_confidence,
             "page_url": page_url,
             "source_app": source_app,
             "source_type": source_type,
@@ -63,31 +70,51 @@ class IntentWorkflowService:
         return self.graph.invoke(initial_state)
 
     def _rank_intents(self, state: IntentWorkflowState) -> dict[str, Any]:
+        infer_speech_intent = getattr(self.vision, "infer_explicit_speech_intent", None)
+        speech_forced_intent = None
+        if callable(infer_speech_intent):
+            speech_forced_intent = infer_speech_intent(
+                speech_text=state.get("speech_text"),
+                speech_confidence=state.get("speech_confidence"),
+            )
         ranked_intents = self.vision.rank_intents(
             image_path=state.get("image_path"),
             content_type=state.get("content_type"),
             text_input=state.get("text_input"),
+            speech_text=state.get("speech_text"),
+            speech_confidence=state.get("speech_confidence"),
             page_url=state.get("page_url"),
             source_app=state.get("source_app"),
             source_type=state.get("source_type"),
             top_k=3,
         )
+        if speech_forced_intent:
+            prioritize_speech_intent = getattr(self.vision, "prioritize_speech_intent", None)
+            if callable(prioritize_speech_intent):
+                ranked_intents = prioritize_speech_intent(
+                    ranked_intents,
+                    speech_intent=speech_forced_intent,
+                )
         requires_confirmation, confirmation_reason = self._should_require_confirmation(
             ranked_intents,
-            forced_intent=state.get("forced_intent"),
+            forced_intent=state.get("forced_intent") or speech_forced_intent,
+            speech_forced_intent=speech_forced_intent,
         )
         return {
+            "speech_forced_intent": speech_forced_intent,
             "ranked_intents": ranked_intents,
             "requires_confirmation": requires_confirmation,
             "confirmation_reason": confirmation_reason,
         }
 
     def _extract_intent(self, state: IntentWorkflowState) -> dict[str, Any]:
-        selected_intent = state.get("forced_intent") or state["ranked_intents"][0].intent
+        selected_intent = state.get("forced_intent") or state.get("speech_forced_intent") or state["ranked_intents"][0].intent
         parsed = self.vision.parse_input(
             image_path=state.get("image_path"),
             content_type=state.get("content_type"),
             text_input=state.get("text_input"),
+            speech_text=state.get("speech_text"),
+            speech_confidence=state.get("speech_confidence"),
             page_url=state.get("page_url"),
             source_app=state.get("source_app"),
             source_type=state.get("source_type"),
@@ -106,8 +133,11 @@ class IntentWorkflowService:
         ranked_intents: list[RankedIntentCandidate],
         *,
         forced_intent: str | None,
+        speech_forced_intent: str | None,
     ) -> tuple[bool, str | None]:
         if forced_intent:
+            return False, None
+        if speech_forced_intent:
             return False, None
         if len(ranked_intents) < 2:
             return False, None

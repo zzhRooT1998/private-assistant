@@ -31,6 +31,8 @@ public struct ScreenIntentAnalysis: Codable, Equatable, Sendable {
     public let sourceType: String?
     public let pageURL: String?
     public let extractedText: String?
+    public let speechText: String?
+    public let speechConfidence: Double?
     public let merchant: String?
     public let currency: String?
     public let originalAmount: String?
@@ -48,6 +50,8 @@ public struct ScreenIntentAnalysis: Codable, Equatable, Sendable {
         case sourceType = "source_type"
         case pageURL = "page_url"
         case extractedText = "extracted_text"
+        case speechText = "speech_text"
+        case speechConfidence = "speech_confidence"
         case merchant
         case currency
         case originalAmount = "original_amount"
@@ -66,6 +70,8 @@ public struct ScreenIntentAnalysis: Codable, Equatable, Sendable {
         sourceType: String?,
         pageURL: String?,
         extractedText: String?,
+        speechText: String?,
+        speechConfidence: Double?,
         merchant: String?,
         currency: String?,
         originalAmount: String?,
@@ -82,6 +88,8 @@ public struct ScreenIntentAnalysis: Codable, Equatable, Sendable {
         self.sourceType = sourceType
         self.pageURL = pageURL
         self.extractedText = extractedText
+        self.speechText = speechText
+        self.speechConfidence = speechConfidence
         self.merchant = merchant
         self.currency = currency
         self.originalAmount = originalAmount
@@ -284,6 +292,8 @@ public struct IntentReview: Codable, Equatable, Identifiable, Sendable {
     public let imagePath: String?
     public let contentType: String?
     public let textInput: String?
+    public let speechText: String?
+    public let speechConfidence: Double?
     public let pageURL: String?
     public let sourceApp: String?
     public let sourceType: String?
@@ -300,6 +310,8 @@ public struct IntentReview: Codable, Equatable, Identifiable, Sendable {
         case imagePath = "image_path"
         case contentType = "content_type"
         case textInput = "text_input"
+        case speechText = "speech_text"
+        case speechConfidence = "speech_confidence"
         case pageURL = "page_url"
         case sourceApp = "source_app"
         case sourceType = "source_type"
@@ -318,6 +330,8 @@ public struct MobileIntakePayload: Sendable {
     public let imageFilename: String?
     public let imageContentType: String?
     public let textInput: String?
+    public let speechText: String?
+    public let speechConfidence: Double?
     public let pageURL: String?
     public let sourceApp: String?
     public let sourceType: String?
@@ -328,6 +342,8 @@ public struct MobileIntakePayload: Sendable {
         imageFilename: String? = nil,
         imageContentType: String? = nil,
         textInput: String? = nil,
+        speechText: String? = nil,
+        speechConfidence: Double? = nil,
         pageURL: String? = nil,
         sourceApp: String? = nil,
         sourceType: String? = nil,
@@ -337,6 +353,8 @@ public struct MobileIntakePayload: Sendable {
         self.imageFilename = imageFilename
         self.imageContentType = imageContentType
         self.textInput = textInput
+        self.speechText = speechText
+        self.speechConfidence = speechConfidence
         self.pageURL = pageURL
         self.sourceApp = sourceApp
         self.sourceType = sourceType
@@ -344,7 +362,7 @@ public struct MobileIntakePayload: Sendable {
     }
 
     public var hasAtLeastOnePrimaryInput: Bool {
-        imageData != nil || normalized(textInput) != nil || normalized(pageURL) != nil
+        imageData != nil || normalized(textInput) != nil || normalized(speechText) != nil || normalized(pageURL) != nil
     }
 
     private func normalized(_ value: String?) -> String? {

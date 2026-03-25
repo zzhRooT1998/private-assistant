@@ -1,11 +1,12 @@
 # private-assistant
 
-Minimal life-agent MVP that accepts iPhone screenshots, shared text, URLs, and receipt images, infers user intent with an OpenAI-compatible multimodal model, stores normalized bookkeeping entries in SQLite, and renders a small server-side UI.
+Production-oriented life-agent backend and iPhone client scaffold that accepts screenshots, optional spoken commands, shared text, URLs, and receipt images, infers user intent with an OpenAI-compatible multimodal model, stores normalized records in SQLite, and renders a small server-side UI.
 
 ## Features
 
 - Receipt image upload through a browser form or API
 - Generic mobile intake for screenshots, shared text, and URLs
+- Optional speech transcript input with speech-first intent resolution
 - Multimodal parsing behind an OpenAI-compatible service layer
 - LangChain prompt/parsing layer plus LangGraph orchestration for ranked intent routing
 - Intent routing that can recognize bookkeeping, todo, reference, schedule, or unknown
@@ -41,6 +42,8 @@ APP_DATABASE_URL=ledger.db
   Accepts `multipart/form-data` with any of:
   - `image`: optional screenshot or shared image
   - `text_input`: optional text extracted from Shortcuts or Share Extension
+  - `speech_text`: optional spoken command transcript
+  - `speech_confidence`: optional ASR confidence score from `0.0` to `1.0`
   - `page_url`: optional URL for the current page
   - `source_app`: optional app name such as `Safari` or `WeChat`
   - `source_type`: optional source type such as `screenshot`, `onscreen`, or `share_extension`
@@ -68,6 +71,8 @@ APP_DATABASE_URL=ledger.db
 ```bash
 curl -X POST http://127.0.0.1:8000/agent/life/mobile-intake \
   -F "image=@/path/to/screenshot.jpg" \
+  -F "speech_text=帮我记这笔账" \
+  -F "speech_confidence=0.93" \
   -F "text_input=Please remind me to reply tonight" \
   -F "page_url=https://example.com/chat/123" \
   -F "source_app=WeChat" \
@@ -150,3 +155,10 @@ An iPhone client scaffold now lives in [`ios/`](./ios):
 - `project.yml`: XcodeGen spec
 
 See [`ios/README.md`](./ios/README.md) for setup steps. The current environment does not have full Xcode enabled, so the scaffold was generated source-first and should be compiled once in Xcode before product work continues.
+
+## Product Documents
+
+- [`docs/prd/2026-03-25-private-assistant-prd.md`](./docs/prd/2026-03-25-private-assistant-prd.md)
+- [`docs/architecture/2026-03-25-private-assistant-architecture.md`](./docs/architecture/2026-03-25-private-assistant-architecture.md)
+- [`docs/technical/2026-03-25-speech-first-intent-design.md`](./docs/technical/2026-03-25-speech-first-intent-design.md)
+- [`docs/progress/2026-03-25-speech-first-delivery-plan.md`](./docs/progress/2026-03-25-speech-first-delivery-plan.md)

@@ -51,6 +51,8 @@ class VisionIntentService:
         image_path: str | Path | None = None,
         content_type: str | None = None,
         text_input: str | None = None,
+        speech_text: str | None = None,
+        speech_confidence: float | None = None,
         page_url: str | None = None,
         source_app: str | None = None,
         source_type: str | None = None,
@@ -62,6 +64,8 @@ class VisionIntentService:
             image_path=image_path,
             content_type=content_type,
             text_input=text_input,
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
             page_url=page_url,
             source_app=source_app,
             source_type=source_type,
@@ -76,7 +80,12 @@ class VisionIntentService:
                 "This usually means the selected model or endpoint does not support image understanding "
                 "or did not follow the JSON-only contract."
             ) from exc
-        return self._normalize_result(parsed)
+        return self._normalize_result(parsed).model_copy(
+            update={
+                "speech_text": speech_text,
+                "speech_confidence": speech_confidence,
+            }
+        )
 
     def rank_intents(
         self,
@@ -84,6 +93,8 @@ class VisionIntentService:
         image_path: str | Path | None = None,
         content_type: str | None = None,
         text_input: str | None = None,
+        speech_text: str | None = None,
+        speech_confidence: float | None = None,
         page_url: str | None = None,
         source_app: str | None = None,
         source_type: str | None = None,
@@ -95,6 +106,8 @@ class VisionIntentService:
             image_path=image_path,
             content_type=content_type,
             text_input=text_input,
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
             page_url=page_url,
             source_app=source_app,
             source_type=source_type,
@@ -135,11 +148,68 @@ class VisionIntentService:
     def parse_receipt(self, image_path: str | Path, content_type: str | None = None) -> ScreenIntentResult:
         return self.parse_input(image_path=image_path, content_type=content_type)
 
+    def infer_explicit_speech_intent(
+        self,
+        *,
+        speech_text: str | None,
+        speech_confidence: float | None,
+    ) -> str | None:
+        normalized = self._normalize_free_text(speech_text)
+        if normalized is None:
+            return None
+        if speech_confidence is not None and speech_confidence < 0.55:
+            return None
+
+        scores = {
+            "bookkeeping": self._count_matches(normalized, ("记账", "记这笔", "记一下账", "报销", "花了", "付款", "收据", "账单", "expense", "receipt", "log this")),
+            "todo": self._count_matches(normalized, ("待办", "todo", "记得", "稍后处理", "回头处理", "之后做", "later", "follow up", "to do")),
+            "reference": self._count_matches(normalized, ("收藏", "保存这个", "存一下", "记下来", "稍后看", "save this", "bookmark", "reference")),
+            "schedule": self._count_matches(normalized, ("提醒我", "日程", "安排", "预约", "开会", "明天", "后天", "今晚", "下午", "上午", "几点", "schedule", "remind me", "meeting")),
+        }
+        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
+        top_intent, top_score = ranked[0]
+        second_score = ranked[1][1] if len(ranked) > 1 else 0
+        if top_score < 1:
+            return None
+        if top_score == second_score:
+            return None
+        if top_intent == "schedule" and not any(token in normalized for token in ("提醒", "日程", "安排", "预约", "开会", "schedule", "remind")):
+            return None
+        return top_intent
+
+    def prioritize_speech_intent(
+        self,
+        ranked_intents: list[RankedIntentCandidate],
+        *,
+        speech_intent: str,
+    ) -> list[RankedIntentCandidate]:
+        if speech_intent not in SUPPORTED_INTENTS:
+            return ranked_intents
+
+        speech_candidate = next((candidate for candidate in ranked_intents if candidate.intent == speech_intent), None)
+        others = [candidate for candidate in ranked_intents if candidate.intent != speech_intent]
+        if speech_candidate is None:
+            speech_candidate = RankedIntentCandidate(
+                intent=speech_intent,
+                confidence=0.91,
+                reason="Explicit speech command takes priority over screenshot context.",
+                summary="Speech command overrides ambiguous visual context.",
+            )
+        else:
+            speech_candidate = speech_candidate.model_copy(
+                update={
+                    "confidence": max(speech_candidate.confidence, 0.91),
+                    "reason": "Explicit speech command takes priority over screenshot context.",
+                }
+            )
+        return [speech_candidate, *others][:3]
+
     def _build_intent_prompt(self, *, forced_intent: str | None) -> str:
         extra_rules = [
             "Return strict JSON for a ScreenIntentResult object.",
             self.intent_output_parser.get_format_instructions(),
             "Use null for missing fields.",
+            "When a valid spoken command is present, treat speech as the primary signal of user intent. Treat the screenshot as supporting evidence for extraction and grounding.",
         ]
         if forced_intent:
             extra_rules.append(
@@ -165,6 +235,7 @@ class VisionIntentService:
                     "system",
                     "{task_description}\n\n"
                     "Rank the top {top_k} most likely user intents for this mobile capture. "
+                    "When a valid spoken command is present, speech should outweigh conflicting screenshot context. "
                     "Return strict JSON with a single key `candidates`, ordered from highest to lowest confidence. "
                     "Each candidate must include: intent, confidence, reason, summary.\n"
                     "{format_instructions}",
@@ -183,6 +254,8 @@ class VisionIntentService:
         image_path: str | Path | None,
         content_type: str | None,
         text_input: str | None,
+        speech_text: str | None,
+        speech_confidence: float | None,
         page_url: str | None,
         source_app: str | None,
         source_type: str | None,
@@ -191,6 +264,8 @@ class VisionIntentService:
             image_path=image_path,
             content_type=content_type,
             text_input=text_input,
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
             page_url=page_url,
             source_app=source_app,
             source_type=source_type,
@@ -228,6 +303,8 @@ class VisionIntentService:
         image_path: str | Path | None,
         content_type: str | None,
         text_input: str | None,
+        speech_text: str | None,
+        speech_confidence: float | None,
         page_url: str | None,
         source_app: str | None,
         source_type: str | None,
@@ -242,6 +319,9 @@ class VisionIntentService:
         ]
         if text_input:
             context_lines.append(f"Shared text:\n{text_input}")
+        if speech_text:
+            confidence_text = "unknown" if speech_confidence is None else f"{speech_confidence:.2f}"
+            context_lines.append(f"Spoken command (primary intent signal, confidence={confidence_text}):\n{speech_text}")
         user_content.append({"type": "input_text", "text": "\n".join(context_lines)})
 
         if image_path is not None:
@@ -418,6 +498,17 @@ class VisionIntentService:
         return None
 
     @staticmethod
+    def _normalize_free_text(value: str | None) -> str | None:
+        if value is None:
+            return None
+        normalized = " ".join(value.strip().lower().split())
+        return normalized or None
+
+    @staticmethod
+    def _count_matches(text: str, keywords: tuple[str, ...]) -> int:
+        return sum(1 for keyword in keywords if keyword in text)
+
+    @staticmethod
     def _extract_json_text(text: str) -> str:
         stripped = text.strip()
         if stripped.startswith("```"):
@@ -489,14 +580,26 @@ class StubVisionIntentService:
         image_path: str | Path | None = None,
         content_type: str | None = None,
         text_input: str | None = None,
+        speech_text: str | None = None,
+        speech_confidence: float | None = None,
         page_url: str | None = None,
         source_app: str | None = None,
         source_type: str | None = None,
         forced_intent: str | None = None,
     ) -> ScreenIntentResult:
         if forced_intent:
-            return self.result.model_copy(deep=True, update={"intent": forced_intent})
-        return self.result.model_copy(deep=True)
+            return self.result.model_copy(
+                deep=True,
+                update={
+                    "intent": forced_intent,
+                    "speech_text": speech_text,
+                    "speech_confidence": speech_confidence,
+                },
+            )
+        return self.result.model_copy(
+            deep=True,
+            update={"speech_text": speech_text, "speech_confidence": speech_confidence},
+        )
 
     def rank_intents(
         self,
@@ -504,12 +607,49 @@ class StubVisionIntentService:
         image_path: str | Path | None = None,
         content_type: str | None = None,
         text_input: str | None = None,
+        speech_text: str | None = None,
+        speech_confidence: float | None = None,
         page_url: str | None = None,
         source_app: str | None = None,
         source_type: str | None = None,
         top_k: int = 3,
     ) -> list[RankedIntentCandidate]:
         return [candidate.model_copy(deep=True) for candidate in self.ranked_intents[:top_k]]
+
+    def infer_explicit_speech_intent(
+        self,
+        *,
+        speech_text: str | None,
+        speech_confidence: float | None,
+    ) -> str | None:
+        normalized = VisionIntentService._normalize_free_text(speech_text)
+        if normalized is None:
+            return None
+        if speech_confidence is not None and speech_confidence < 0.55:
+            return None
+        if any(token in normalized for token in ("记账", "记这笔", "记一下账", "报销", "expense", "receipt", "log this")):
+            return "bookkeeping"
+        if any(token in normalized for token in ("提醒我", "日程", "安排", "预约", "开会", "schedule", "remind")):
+            return "schedule"
+        if any(token in normalized for token in ("待办", "todo", "记得", "稍后处理", "later", "follow up")):
+            return "todo"
+        if any(token in normalized for token in ("收藏", "保存这个", "稍后看", "save this", "bookmark")):
+            return "reference"
+        return None
+
+    def prioritize_speech_intent(
+        self,
+        ranked_intents: list[RankedIntentCandidate],
+        *,
+        speech_intent: str,
+    ) -> list[RankedIntentCandidate]:
+        speech_candidate = next((candidate for candidate in ranked_intents if candidate.intent == speech_intent), None)
+        others = [candidate for candidate in ranked_intents if candidate.intent != speech_intent]
+        if speech_candidate is None:
+            speech_candidate = RankedIntentCandidate(intent=speech_intent, confidence=0.91, reason="Speech override.")
+        else:
+            speech_candidate = speech_candidate.model_copy(update={"confidence": max(speech_candidate.confidence, 0.91)})
+        return [speech_candidate, *others][:3]
 
     def parse_receipt(self, image_path: str | Path, content_type: str | None = None) -> ScreenIntentResult:
         return self.result.model_copy(deep=True)

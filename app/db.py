@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS intent_reviews (
   image_path TEXT,
   content_type TEXT,
   text_input TEXT,
+  speech_text TEXT,
+  speech_confidence REAL,
   page_url TEXT,
   source_app TEXT,
   source_type TEXT,
@@ -94,3 +96,7 @@ def _ensure_intent_review_columns(connection: sqlite3.Connection) -> None:
     }
     if "confirmation_reason" not in existing_columns:
         connection.execute("ALTER TABLE intent_reviews ADD COLUMN confirmation_reason TEXT")
+    if "speech_text" not in existing_columns:
+        connection.execute("ALTER TABLE intent_reviews ADD COLUMN speech_text TEXT")
+    if "speech_confidence" not in existing_columns:
+        connection.execute("ALTER TABLE intent_reviews ADD COLUMN speech_confidence REAL")
