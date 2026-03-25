@@ -34,91 +34,28 @@ struct SendToPrivateAssistantIntent: AppIntent {
     var spokenCommand: String?
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        guard let screenshot else {
-            throw SendToPrivateAssistantIntentError.missingScreenshot
-        }
-        let loadedScreenshot = try await loadImageData(from: screenshot)
-        guard let loadedScreenshot else {
-            throw SendToPrivateAssistantIntentError.unreadableScreenshot
-        }
-        let payload = MobileIntakePayload(
-            imageData: loadedScreenshot.data,
-            imageFilename: loadedScreenshot.filename,
-            imageContentType: loadedScreenshot.contentType,
-            speechText: normalizedSpokenCommand,
-            sourceType: ShortcutSourceType.screenshot.rawValue,
-            capturedAt: ISO8601DateFormatter().string(from: Date())
-        )
-        let client = PrivateAssistantAPIClient()
-        let strings = AppStrings(language: shortcutLanguage)
-        try client.enqueueMobileIntake(payload, completion: { result in
-            switch result {
-            case let .success(response):
-                Task {
-                    await sendShortcutNotification(
-                        title: strings.shortcutSendSucceededTitle(),
-                        body: strings.shortcutSendSucceededMessage(response.intent)
-                    )
-                }
-            case let .failure(error):
-                let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-                Task {
-                    await sendShortcutNotification(
-                        title: strings.shortcutSendFailedTitle(),
-                        body: strings.shortcutSendFailedMessage(detail)
-                    )
-                }
-            }
-        })
-        return .result(
-            dialog: IntentDialog(
-                stringLiteral: normalizedSpokenCommand == nil
-                    ? strings.shortcutQueuedMessage()
-                    : strings.shortcutQueuedWithSpeechMessage()
-            )
-        )
+        let dialog = try await queueShortcutUpload(screenshot: screenshot, spokenCommand: normalizedSpokenCommand)
+        return .result(dialog: IntentDialog(stringLiteral: dialog))
     }
 
     private var normalizedSpokenCommand: String? {
         let trimmed = spokenCommand?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return trimmed.isEmpty ? nil : trimmed
     }
+}
 
-    private func loadImageData(from file: IntentFile?) async throws -> LoadedScreenshot? {
-        guard let file else { return nil }
-        let originalData: Data
-        if #available(iOS 18.0, *) {
-            originalData = try await file.data(contentType: .image)
-        } else {
-            guard let fileURL = file.fileURL else {
-                return nil
-            }
-            originalData = try Data(contentsOf: fileURL)
-        }
+@available(iOS 18.0, *)
+struct SendScreenshotOnlyIntent: AppIntent {
+    static let title: LocalizedStringResource = "Send Screenshot Only"
+    static let description = IntentDescription("Queue only the current screenshot for intent analysis. Use this shortcut when dictation is unavailable.")
+    static let openAppWhenRun = false
 
-        if let image = UIImage(data: originalData),
-           let jpegData = image.jpegData(compressionQuality: 0.78) {
-            return LoadedScreenshot(
-                data: jpegData,
-                filename: Self.normalizedJPEGFilename(from: file.filename),
-                contentType: "image/jpeg"
-            )
-        }
+    @Parameter(title: "Screenshot", supportedContentTypes: [.image])
+    var screenshot: IntentFile?
 
-        let fallbackFilename = file.filename.isEmpty ? "capture.jpg" : file.filename
-        return LoadedScreenshot(
-            data: originalData,
-            filename: fallbackFilename,
-            contentType: UTType.image.preferredMIMEType ?? "image/jpeg"
-        )
-    }
-    private static func normalizedJPEGFilename(from filename: String) -> String {
-        guard !filename.isEmpty else {
-            return "capture.jpg"
-        }
-        let nsFilename = filename as NSString
-        let basename = nsFilename.deletingPathExtension
-        return basename.isEmpty ? "capture.jpg" : "\(basename).jpg"
+    func perform() async throws -> some IntentResult & ProvidesDialog {
+        let dialog = try await queueShortcutUpload(screenshot: screenshot, spokenCommand: nil)
+        return .result(dialog: IntentDialog(stringLiteral: dialog))
     }
 }
 
@@ -157,6 +94,91 @@ private struct LoadedScreenshot {
 }
 
 @available(iOS 18.0, *)
+private func queueShortcutUpload(screenshot: IntentFile?, spokenCommand: String?) async throws -> String {
+    guard let screenshot else {
+        throw SendToPrivateAssistantIntentError.missingScreenshot
+    }
+
+    let loadedScreenshot = try await loadImageData(from: screenshot)
+    guard let loadedScreenshot else {
+        throw SendToPrivateAssistantIntentError.unreadableScreenshot
+    }
+
+    let payload = MobileIntakePayload(
+        imageData: loadedScreenshot.data,
+        imageFilename: loadedScreenshot.filename,
+        imageContentType: loadedScreenshot.contentType,
+        speechText: spokenCommand,
+        sourceType: ShortcutSourceType.screenshot.rawValue,
+        capturedAt: ISO8601DateFormatter().string(from: Date())
+    )
+    let client = PrivateAssistantAPIClient()
+    let strings = AppStrings(language: shortcutLanguage)
+
+    try client.enqueueMobileIntake(payload, completion: { result in
+        switch result {
+        case let .success(response):
+            Task {
+                await sendShortcutNotification(
+                    title: strings.shortcutSendSucceededTitle(),
+                    body: strings.shortcutSendSucceededMessage(response.intent)
+                )
+            }
+        case let .failure(error):
+            let detail = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            Task {
+                await sendShortcutNotification(
+                    title: strings.shortcutSendFailedTitle(),
+                    body: strings.shortcutSendFailedMessage(detail)
+                )
+            }
+        }
+    })
+
+    return spokenCommand == nil ? strings.shortcutQueuedMessage() : strings.shortcutQueuedWithSpeechMessage()
+}
+
+@available(iOS 18.0, *)
+private func loadImageData(from file: IntentFile?) async throws -> LoadedScreenshot? {
+    guard let file else { return nil }
+    let originalData: Data
+    if #available(iOS 18.0, *) {
+        originalData = try await file.data(contentType: .image)
+    } else {
+        guard let fileURL = file.fileURL else {
+            return nil
+        }
+        originalData = try Data(contentsOf: fileURL)
+    }
+
+    if let image = UIImage(data: originalData),
+       let jpegData = image.jpegData(compressionQuality: 0.78) {
+        return LoadedScreenshot(
+            data: jpegData,
+            filename: normalizedJPEGFilename(from: file.filename),
+            contentType: "image/jpeg"
+        )
+    }
+
+    let fallbackFilename = file.filename.isEmpty ? "capture.jpg" : file.filename
+    return LoadedScreenshot(
+        data: originalData,
+        filename: fallbackFilename,
+        contentType: UTType.image.preferredMIMEType ?? "image/jpeg"
+    )
+}
+
+@available(iOS 18.0, *)
+private func normalizedJPEGFilename(from filename: String) -> String {
+    guard !filename.isEmpty else {
+        return "capture.jpg"
+    }
+    let nsFilename = filename as NSString
+    let basename = nsFilename.deletingPathExtension
+    return basename.isEmpty ? "capture.jpg" : "\(basename).jpg"
+}
+
+@available(iOS 18.0, *)
 enum ShortcutSourceType: String, AppEnum {
     case screenshot
     case onscreen
@@ -175,13 +197,22 @@ struct PrivateAssistantShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         return [
             AppShortcut(
+                intent: SendScreenshotOnlyIntent(),
+                phrases: [
+                    "Send screenshot only to \(.applicationName)",
+                    "Send screenshot without voice to \(.applicationName)",
+                ],
+                shortTitle: "Send Screenshot",
+                systemImageName: "photo.badge.arrow.down"
+            ),
+            AppShortcut(
                 intent: SendToPrivateAssistantIntent(),
                 phrases: [
                     "Send to \(.applicationName)",
                     "Send screenshot to \(.applicationName)",
                     "Send screenshot and command to \(.applicationName)",
                 ],
-                shortTitle: "Send Capture",
+                shortTitle: "Send Capture + Voice",
                 systemImageName: "camera.macro"
             )
         ]

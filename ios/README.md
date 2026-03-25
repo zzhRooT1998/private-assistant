@@ -38,7 +38,16 @@ The default server URL is `https://b308-112-10-191-85.ngrok-free.app`.
 
 ## Shortcut Setup
 
-Use the screenshot plus system dictation flow on iPhone:
+Use one of these two shortcut flows on iPhone:
+
+Stable screenshot-only flow:
+
+1. Add `Take Screenshot`
+2. Add `Send Screenshot Only`
+3. Pass the screenshot output into the `Screenshot` parameter
+4. Bind this shortcut to Back Tap if you want the most reliable trigger
+
+Screenshot plus system dictation flow:
 
 1. Add `Take Screenshot`
 2. Add `Dictate Text`
@@ -46,9 +55,8 @@ Use the screenshot plus system dictation flow on iPhone:
 4. Pass the screenshot output into the `Screenshot` parameter
 5. Pass the `Dictate Text` output into the `Spoken Command` parameter
 6. Enable `Show When Run` if you want the dialog confirmation
-7. Bind the shortcut to Back Tap if needed
 
-This flow keeps the user in Shortcuts system UI for voice input instead of opening the app just to record audio.
+The second flow keeps the user in Shortcuts system UI for voice input instead of opening the app just to record audio. If the iPhone is in a phone call or dictation is otherwise unavailable, use the screenshot-only shortcut so capture still works.
 
 ## Important Gaps
 
