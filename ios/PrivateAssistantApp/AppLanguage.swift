@@ -244,6 +244,13 @@ struct AppStrings {
         )
     }
 
+    func shortcutQueuedWithSpeechMessage() -> String {
+        localized(
+            en: "Your screenshot and dictated command are on their way. Open Private Assistant in a few seconds to review or confirm the result.",
+            zh: "截图和听写指令已经发出。几秒后打开 Private Assistant 查看结果，必要时确认意图。"
+        )
+    }
+
     func shortcutSendFailedTitle() -> String {
         localized(en: "Screenshot Send Failed", zh: "截图发送失败")
     }

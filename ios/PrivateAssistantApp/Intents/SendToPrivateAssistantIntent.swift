@@ -24,11 +24,14 @@ enum SendToPrivateAssistantIntentError: LocalizedError {
 @available(iOS 18.0, *)
 struct SendToPrivateAssistantIntent: AppIntent {
     static let title: LocalizedStringResource = "Send To Private Assistant"
-    static let description = IntentDescription("Queue a screenshot for intent analysis and surface any follow-up confirmation inside the app.")
+    static let description = IntentDescription("Queue a screenshot and optional dictated command for intent analysis, then surface any follow-up confirmation inside the app.")
     static let openAppWhenRun = false
 
     @Parameter(title: "Screenshot", supportedContentTypes: [.image])
     var screenshot: IntentFile?
+
+    @Parameter(title: "Spoken Command")
+    var spokenCommand: String?
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         guard let screenshot else {
@@ -42,6 +45,7 @@ struct SendToPrivateAssistantIntent: AppIntent {
             imageData: loadedScreenshot.data,
             imageFilename: loadedScreenshot.filename,
             imageContentType: loadedScreenshot.contentType,
+            speechText: normalizedSpokenCommand,
             sourceType: ShortcutSourceType.screenshot.rawValue,
             capturedAt: ISO8601DateFormatter().string(from: Date())
         )
@@ -66,7 +70,18 @@ struct SendToPrivateAssistantIntent: AppIntent {
                 }
             }
         })
-        return .result(dialog: IntentDialog(stringLiteral: strings.shortcutQueuedMessage()))
+        return .result(
+            dialog: IntentDialog(
+                stringLiteral: normalizedSpokenCommand == nil
+                    ? strings.shortcutQueuedMessage()
+                    : strings.shortcutQueuedWithSpeechMessage()
+            )
+        )
+    }
+
+    private var normalizedSpokenCommand: String? {
+        let trimmed = spokenCommand?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return trimmed.isEmpty ? nil : trimmed
     }
 
     private func loadImageData(from file: IntentFile?) async throws -> LoadedScreenshot? {
@@ -164,9 +179,10 @@ struct PrivateAssistantShortcuts: AppShortcutsProvider {
                 phrases: [
                     "Send to \(.applicationName)",
                     "Send screenshot to \(.applicationName)",
+                    "Send screenshot and command to \(.applicationName)",
                 ],
-                shortTitle: "Send Screenshot",
-                systemImageName: "camera.viewfinder"
+                shortTitle: "Send Capture",
+                systemImageName: "camera.macro"
             )
         ]
     }
