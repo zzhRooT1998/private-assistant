@@ -2,7 +2,7 @@ import Foundation
 
 public enum PrivateAssistantEnvironment {
     public static let serverBaseURLKey = "server_base_url"
-    public static let defaultServerBaseURL = "https://b308-112-10-191-85.ngrok-free.app"
+    public static let defaultServerBaseURL = "https://5532-112-10-191-85.ngrok-free.app"
 }
 
 public enum ConfigurationStoreError: LocalizedError {

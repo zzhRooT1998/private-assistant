@@ -4,6 +4,7 @@ public enum PrivateAssistantAPIError: LocalizedError {
     case emptyPayload
     case invalidResponse
     case requestTimedOut
+    case expiredTunnel
     case unexpectedStatus(code: Int, message: String)
 
     public var errorDescription: String? {
@@ -14,6 +15,8 @@ public enum PrivateAssistantAPIError: LocalizedError {
             return "The server response was invalid."
         case .requestTimedOut:
             return "The request timed out. The assistant may still be processing the screenshot. Try again in a moment."
+        case .expiredTunnel:
+            return "The current tunnel URL is no longer reachable. Update the Server Base URL in Settings with the latest ngrok address."
         case let .unexpectedStatus(code, message):
             return "Server returned \(code): \(message)"
         }
@@ -72,8 +75,7 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
                     throw PrivateAssistantAPIError.invalidResponse
                 }
                 guard (200...299).contains(httpResponse.statusCode) else {
-                    let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-                    throw PrivateAssistantAPIError.unexpectedStatus(code: httpResponse.statusCode, message: message)
+                    throw Self.decodeHTTPError(data: data, response: httpResponse)
                 }
                 let decoded = try decoder.decode(MobileIntakeResponse.self, from: data)
                 completion?(.success(decoded))
@@ -202,10 +204,25 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
             throw PrivateAssistantAPIError.invalidResponse
         }
         guard (200...299).contains(httpResponse.statusCode) else {
-            let message = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw PrivateAssistantAPIError.unexpectedStatus(code: httpResponse.statusCode, message: message)
+            throw Self.decodeHTTPError(data: data, response: httpResponse)
         }
         return try decoder.decode(T.self, from: data)
+    }
+
+    private static func decodeHTTPError(data: Data, response: HTTPURLResponse) -> PrivateAssistantAPIError {
+        let message = String(data: data, encoding: .utf8) ?? "Unknown error"
+        let lowercased = message.lowercased()
+        if response.statusCode == 404,
+           lowercased.contains("ngrok"),
+           lowercased.contains("<!doctype html") {
+            return .expiredTunnel
+        }
+
+        let compactMessage = message
+            .replacingOccurrences(of: "\n", with: " ")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let shortened = compactMessage.count > 180 ? String(compactMessage.prefix(180)) + "..." : compactMessage
+        return .unexpectedStatus(code: response.statusCode, message: shortened)
     }
 }
 
