@@ -11,6 +11,7 @@ struct CaptureComposerView: View {
 
     var body: some View {
         let strings = model.strings
+        let navigationBackground = Color(red: 0.95, green: 0.95, blue: 0.92)
 
         NavigationStack {
             ZStack {
@@ -44,9 +45,11 @@ struct CaptureComposerView: View {
                     .padding(20)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .navigationTitle(strings.captureTitle)
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(navigationBackground, for: .navigationBar)
             .task {
                 if model.totalActivityCount == 0 {
                     await model.reloadActivity()

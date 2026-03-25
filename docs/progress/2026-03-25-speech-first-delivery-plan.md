@@ -12,6 +12,10 @@ Move the project from screenshot-only MVP behavior toward a production-ready spe
 - [x] Update shared iOS models and request payload support for speech metadata
 - [x] Add or update backend tests for speech-aware behavior
 - [x] Add PRD, architecture, and technical design documents
-- [ ] Add native iOS speech capture UI
+- [x] Add native iOS speech capture UI
 - [ ] Add production metrics and monitoring
-- [ ] Replace keyword-based speech override with a stronger command parser
+- [x] Replace keyword-based speech override with a stronger command parser
+
+## Remaining Gap
+
+- Production metrics and monitoring are still not implemented. The current app and backend expose behavior through local logs and repository tests, but they do not yet publish structured runtime metrics or audit dashboards.

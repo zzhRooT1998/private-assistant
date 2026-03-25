@@ -89,6 +89,103 @@ def test_upload_image_returns_unknown_without_insertion(tmp_path):
     assert ledger_response.json() == []
 
 
+def test_filters_ledger_entries_via_query_params(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="bookkeeping",
+        action="create_bookkeeping_entry",
+        confidence=0.91,
+        summary="Ride receipt",
+        merchant="DiDi",
+        currency="CNY",
+        original_amount="60.00",
+        discount_amount="0.00",
+        actual_amount="60.00",
+        category_guess="transport",
+        occurred_at="2026-03-26T10:00:00+08:00",
+    )
+    client = _make_client(tmp_path, parsed)
+
+    response = client.post(
+        "/agent/life/intake",
+        files={"image": ("receipt.jpg", b"fake-image", "image/jpeg")},
+    )
+    assert response.status_code == 200
+
+    filtered = client.get(
+        "/api/ledger",
+        params={
+            "q": "didi",
+            "category": "transport",
+            "amount_min": 50,
+            "date_from": "2026-03-26",
+            "sort_by": "actual_amount",
+            "sort_order": "desc",
+            "limit": 10,
+        },
+    )
+
+    assert filtered.status_code == 200
+    payload = filtered.json()
+    assert len(payload) == 1
+    assert payload[0]["merchant"] == "DiDi"
+
+
+def test_returns_ledger_detail_payload(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="bookkeeping",
+        action="create_bookkeeping_entry",
+        confidence=0.93,
+        summary="Receipt from Sample Cafe.",
+        merchant="Sample Cafe",
+        currency="CNY",
+        original_amount="42.00",
+        discount_amount="8.00",
+        actual_amount="34.00",
+        category_guess="food",
+        occurred_at="2026-03-19T12:30:00+08:00",
+    )
+    client = _make_client(tmp_path, parsed)
+
+    response = client.post(
+        "/agent/life/intake",
+        files={"image": ("receipt.jpg", b"fake-image", "image/jpeg")},
+    )
+    assert response.status_code == 200
+
+    entry_id = response.json()["ledger_entry"]["id"]
+    detail = client.get(f"/api/ledger/{entry_id}")
+
+    assert detail.status_code == 200
+    payload = detail.json()
+    assert payload["merchant"] == "Sample Cafe"
+    assert payload["effective_occurred_at"] == "2026-03-19T12:30:00+08:00"
+    assert '"merchant": "Sample Cafe"' in payload["raw_model_response_json"]
+
+
+def test_ledger_filters_endpoint_does_not_conflict_with_entry_detail_route(tmp_path):
+    parsed = ScreenIntentResult(
+        intent="bookkeeping",
+        action="create_bookkeeping_entry",
+        confidence=0.93,
+        summary="Receipt from Sample Cafe.",
+        merchant="Sample Cafe",
+        currency="CNY",
+        original_amount="42.00",
+        discount_amount="8.00",
+        actual_amount="34.00",
+        category_guess="food",
+        occurred_at="2026-03-19T12:30:00+08:00",
+    )
+    client = _make_client(tmp_path, parsed)
+
+    response = client.get("/api/ledger/filters")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "categories" in payload
+    assert "sort_options" in payload
+
+
 def test_rejects_non_image_upload(tmp_path):
     parsed = ScreenIntentResult(
         intent="unknown",

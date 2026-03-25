@@ -6,10 +6,11 @@ struct ActivityView: View {
 
     var body: some View {
         let strings = model.strings
+        let navigationBackground = Color(red: 0.97, green: 0.97, blue: 0.95)
 
         NavigationStack {
             ZStack {
-                Color(red: 0.97, green: 0.97, blue: 0.95)
+                navigationBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -26,7 +27,7 @@ struct ActivityView: View {
                             if !model.todoEntries.isEmpty {
                                 activitySection(strings.todos, systemImage: "checklist", tint: .orange) {
                                     ForEach(model.todoEntries) { entry in
-                                        activityCard(title: entry.title, subtitle: entry.details, meta: entry.dueAt ?? entry.createdAt)
+                                        todoCard(entry)
                                     }
                                 }
                             }
@@ -42,7 +43,7 @@ struct ActivityView: View {
                             if !model.scheduleEntries.isEmpty {
                                 activitySection(strings.schedule, systemImage: "calendar", tint: .pink) {
                                     ForEach(model.scheduleEntries) { entry in
-                                        activityCard(title: entry.title, subtitle: entry.details, meta: entry.startAt)
+                                        scheduleCard(entry)
                                     }
                                 }
                             }
@@ -54,6 +55,7 @@ struct ActivityView: View {
                     await model.reloadActivity()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .overlay {
                 if model.isRefreshingActivity && model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
                     ProgressView()
@@ -62,6 +64,24 @@ struct ActivityView: View {
             .navigationTitle(strings.activityTitle)
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(navigationBackground, for: .navigationBar)
+            .alert(
+                strings.requestFailed,
+                isPresented: Binding(
+                    get: { model.errorMessage != nil },
+                    set: { newValue in
+                        if !newValue {
+                            model.errorMessage = nil
+                        }
+                    }
+                )
+            ) {
+                Button(strings.ok) {
+                    model.errorMessage = nil
+                }
+            } message: {
+                Text(model.errorMessage ?? "")
+            }
             .task {
                 if model.todoEntries.isEmpty && model.referenceEntries.isEmpty && model.scheduleEntries.isEmpty {
                     await model.reloadActivity()
@@ -131,5 +151,103 @@ struct ActivityView: View {
         .padding(16)
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func todoCard(_ entry: TodoEntry) -> some View {
+        let strings = model.strings
+
+        return VStack(alignment: .leading, spacing: 12) {
+            activityCard(title: entry.title, subtitle: entry.details, meta: entry.dueAt ?? entry.createdAt)
+
+            HStack(spacing: 10) {
+                productivityButton(
+                    title: strings.addToReminders,
+                    systemImage: "checklist.checked",
+                    tint: .orange,
+                    isLoading: model.isPerformingProductivityAction(model.todoReminderActionKey(for: entry))
+                ) {
+                    Task {
+                        await model.saveTodoToReminders(entry)
+                    }
+                }
+
+                if model.supportsSystemAlarm, model.canScheduleAlarm(for: entry) {
+                    productivityButton(
+                        title: strings.setAlarm,
+                        systemImage: "alarm",
+                        tint: .red,
+                        isLoading: model.isPerformingProductivityAction(model.todoAlarmActionKey(for: entry))
+                    ) {
+                        Task {
+                            await model.scheduleAlarm(forTodo: entry)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func scheduleCard(_ entry: ScheduleEntry) -> some View {
+        let strings = model.strings
+
+        return VStack(alignment: .leading, spacing: 12) {
+            activityCard(title: entry.title, subtitle: entry.details, meta: entry.startAt)
+
+            HStack(spacing: 10) {
+                productivityButton(
+                    title: strings.addToCalendar,
+                    systemImage: "calendar.badge.plus",
+                    tint: .pink,
+                    isLoading: model.isPerformingProductivityAction(model.scheduleCalendarActionKey(for: entry))
+                ) {
+                    Task {
+                        await model.saveScheduleToCalendar(entry)
+                    }
+                }
+
+                if model.supportsSystemAlarm, model.canScheduleAlarm(for: entry) {
+                    productivityButton(
+                        title: strings.setAlarm,
+                        systemImage: "alarm",
+                        tint: .red,
+                        isLoading: model.isPerformingProductivityAction(model.scheduleAlarmActionKey(for: entry))
+                    ) {
+                        Task {
+                            await model.scheduleAlarm(forSchedule: entry)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func productivityButton(
+        title: String,
+        systemImage: String,
+        tint: Color,
+        isLoading: Bool,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.small)
+                } else {
+                    Image(systemName: systemImage)
+                }
+                Text(title)
+                    .lineLimit(1)
+            }
+            .font(.subheadline.weight(.semibold))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
+            .padding(.horizontal, 12)
+            .background(tint.opacity(0.12))
+            .foregroundStyle(tint)
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isLoading)
     }
 }

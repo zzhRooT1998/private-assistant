@@ -13,6 +13,9 @@ This folder contains a source-first iOS scaffold for the Private Assistant clien
 - App Shortcut entry via `SendToPrivateAssistantIntent`
 - Share Extension entry for screenshots, images, links, and plain text
 - In-app views for recent todos, references, schedules, and bookkeeping entries
+- Advanced ledger search with keyword, category, amount range, date range, and sort controls
+- Ledger detail sheets with amount breakdown, metadata, and raw model output
+- Native execution hooks from app activity into Reminders, Calendar, and iOS 26.1+ AlarmKit
 - Local `UserDefaults` storage for the backend base URL
 
 ## Before Opening In Xcode
@@ -32,7 +35,7 @@ open PrivateAssistantMobile.xcodeproj
 
 ## Backend URL
 
-The default server URL is `https://b308-112-10-191-85.ngrok-free.app`.
+The default server URL is `https://5532-112-10-191-85.ngrok-free.app`.
 
 - Replace it with your current tunnel or your Mac's LAN IP if the default tunnel changes.
 
@@ -57,6 +60,27 @@ Screenshot plus system dictation flow:
 6. Enable `Show When Run` if you want the dialog confirmation
 
 The second flow keeps the user in Shortcuts system UI for voice input instead of opening the app just to record audio. If the iPhone is in a phone call or dictation is otherwise unavailable, use the screenshot-only shortcut so capture still works.
+
+## Native Productivity Actions
+
+The `Activity` tab now supports local execution for saved items:
+
+- `todo` entries can be written into Apple Reminders
+- `schedule` entries can be written into Apple Calendar
+- future `todo` and `schedule` items can become system alarms on `iOS 26.1+`
+
+Permission behavior:
+
+- Reminders uses `NSRemindersFullAccessUsageDescription`
+- Calendar uses `NSCalendarsWriteOnlyAccessUsageDescription`
+- AlarmKit requests authorization at the moment an alarm is scheduled
+
+Current product behavior:
+
+- these actions are user-triggered from the app, not automatic on save
+- alarms only appear when the device is on `iOS 26.1+`
+- AlarmKit is used only for future timestamps; past or missing dates are rejected
+- repeated taps will create multiple native items or alarms, so the current build treats each tap as an explicit new export
 
 ## Important Gaps
 

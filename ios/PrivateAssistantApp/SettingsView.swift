@@ -5,10 +5,11 @@ struct SettingsView: View {
 
     var body: some View {
         let strings = model.strings
+        let navigationBackground = Color(red: 0.97, green: 0.97, blue: 0.95)
 
         NavigationStack {
             ZStack {
-                Color(red: 0.97, green: 0.97, blue: 0.95)
+                navigationBackground
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -105,9 +106,11 @@ struct SettingsView: View {
                     .padding(20)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .navigationTitle(strings.settingsTitle)
             .navigationBarTitleDisplayMode(.large)
             .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(navigationBackground, for: .navigationBar)
         }
     }
 }

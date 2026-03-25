@@ -17,6 +17,14 @@ from app.schemas import (
 
 
 class LedgerRepository:
+    LEDGER_SORT_COLUMNS = {
+        "created_at": "created_at",
+        "occurred_at": "COALESCE(occurred_at, created_at)",
+        "actual_amount": "CAST(actual_amount AS REAL)",
+        "merchant": "COALESCE(merchant, '')",
+        "category": "COALESCE(category, '')",
+    }
+
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
 
@@ -64,16 +72,122 @@ class LedgerRepository:
             return int(cursor.lastrowid)
 
     def list_entries(self, limit: int = 20) -> list[dict[str, Any]]:
+        return self.search_entries(limit=limit)
+
+    def search_entries(
+        self,
+        *,
+        query: str | None = None,
+        category: str | None = None,
+        amount_min: float | None = None,
+        amount_max: float | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        normalized_sort_order = sort_order.lower()
+        if normalized_sort_order not in {"asc", "desc"}:
+            raise ValueError("sort_order must be 'asc' or 'desc'")
+
+        sort_column = self.LEDGER_SORT_COLUMNS.get(sort_by)
+        if sort_column is None:
+            raise ValueError(f"Unsupported sort_by value: {sort_by}")
+
+        predicates: list[str] = []
+        parameters: list[Any] = []
+
+        if query:
+            normalized_query = f"%{query.strip().lower()}%"
+            predicates.append(
+                """
+                (
+                    LOWER(COALESCE(merchant, '')) LIKE ?
+                    OR LOWER(COALESCE(category, '')) LIKE ?
+                    OR LOWER(COALESCE(currency, '')) LIKE ?
+                    OR LOWER(COALESCE(intent, '')) LIKE ?
+                    OR actual_amount LIKE ?
+                )
+                """
+            )
+            parameters.extend([normalized_query] * 5)
+
+        if category:
+            predicates.append("LOWER(COALESCE(category, '')) = ?")
+            parameters.append(category.strip().lower())
+
+        if amount_min is not None:
+            predicates.append("CAST(actual_amount AS REAL) >= ?")
+            parameters.append(amount_min)
+
+        if amount_max is not None:
+            predicates.append("CAST(actual_amount AS REAL) <= ?")
+            parameters.append(amount_max)
+
+        if date_from:
+            predicates.append("SUBSTR(COALESCE(occurred_at, created_at), 1, 10) >= ?")
+            parameters.append(date_from)
+
+        if date_to:
+            predicates.append("SUBSTR(COALESCE(occurred_at, created_at), 1, 10) <= ?")
+            parameters.append(date_to)
+
+        where_clause = ""
+        if predicates:
+            where_clause = "WHERE " + " AND ".join(predicates)
+
+        with connect_db(self.db_path) as connection:
+            rows = connection.execute(
+                f"""
+                SELECT * FROM ledger_entries
+                {where_clause}
+                ORDER BY {sort_column} {normalized_sort_order}, id DESC
+                LIMIT ?
+                """,
+                (*parameters, limit),
+            ).fetchall()
+        return [self._row_to_dict(row) for row in rows]
+
+    def get_entry_detail(self, entry_id: int) -> dict[str, Any] | None:
+        item = self.get_entry(entry_id)
+        if item is None:
+            return None
+
+        item["effective_occurred_at"] = item.get("occurred_at") or item.get("created_at")
+        item["raw_model_response_json"] = json.dumps(
+            item.get("raw_model_response") or {},
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        )
+        return item
+
+    def list_entry_categories(self) -> list[str]:
         with connect_db(self.db_path) as connection:
             rows = connection.execute(
                 """
-                SELECT * FROM ledger_entries
-                ORDER BY id DESC
+                SELECT DISTINCT category
+                FROM ledger_entries
+                WHERE category IS NOT NULL AND TRIM(category) != ''
+                ORDER BY LOWER(category) ASC
+                """
+            ).fetchall()
+        return [str(row["category"]) for row in rows]
+
+    def list_entry_merchants(self, *, limit: int = 20) -> list[str]:
+        with connect_db(self.db_path) as connection:
+            rows = connection.execute(
+                """
+                SELECT DISTINCT merchant
+                FROM ledger_entries
+                WHERE merchant IS NOT NULL AND TRIM(merchant) != ''
+                ORDER BY LOWER(merchant) ASC
                 LIMIT ?
                 """,
                 (limit,),
             ).fetchall()
-        return [self._row_to_dict(row) for row in rows]
+        return [str(row["merchant"]) for row in rows]
 
     def get_entry(self, entry_id: int) -> dict[str, Any] | None:
         with connect_db(self.db_path) as connection:

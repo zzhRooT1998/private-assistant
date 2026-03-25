@@ -74,8 +74,41 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     @app.get("/api/ledger")
-    def list_ledger(repo: LedgerRepository = Depends(get_repository)) -> list[dict]:
-        return repo.list_entries(limit=20)
+    def list_ledger(
+        q: str | None = None,
+        category: str | None = None,
+        amount_min: float | None = None,
+        amount_max: float | None = None,
+        date_from: str | None = None,
+        date_to: str | None = None,
+        sort_by: str = "created_at",
+        sort_order: str = "desc",
+        limit: int = 20,
+        repo: LedgerRepository = Depends(get_repository),
+    ) -> list[dict]:
+        try:
+            return repo.search_entries(
+                query=q,
+                category=category,
+                amount_min=amount_min,
+                amount_max=amount_max,
+                date_from=date_from,
+                date_to=date_to,
+                sort_by=sort_by,
+                sort_order=sort_order,
+                limit=limit,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.get("/api/ledger/filters")
+    def ledger_filters(repo: LedgerRepository = Depends(get_repository)) -> dict:
+        return {
+            "categories": repo.list_entry_categories(),
+            "merchants": repo.list_entry_merchants(limit=30),
+            "sort_options": sorted(LedgerRepository.LEDGER_SORT_COLUMNS.keys()),
+            "sort_orders": ["asc", "desc"],
+        }
 
     @app.get("/api/todos")
     def list_todos(repo: LedgerRepository = Depends(get_repository)) -> list[dict]:
@@ -98,9 +131,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         resolved_status = None if status == "all" else status
         return [IntentReview.model_validate(item) for item in repo.list_intent_reviews(status=resolved_status, limit=limit)]
 
-    @app.get("/api/ledger/{entry_id}")
+    @app.get("/api/ledger/{entry_id:int}")
     def get_ledger_entry(entry_id: int, repo: LedgerRepository = Depends(get_repository)) -> dict:
-        item = repo.get_entry(entry_id)
+        item = repo.get_entry_detail(entry_id)
         if item is None:
             raise HTTPException(status_code=404, detail="Ledger entry not found")
         return item

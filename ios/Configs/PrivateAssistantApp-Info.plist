@@ -18,10 +18,16 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Private Assistant uses system alarms to turn saved tasks and schedules into on-device alarms.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Private Assistant writes saved schedules into your calendar when an automation creates an event.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Private Assistant records your voice so spoken commands can be sent with the current screenshot.</string>
+	<string>Private Assistant records short voice commands so it can capture spoken instructions.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Private Assistant writes saved tasks into Reminders when an automation creates a todo.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Private Assistant converts your speech to text to understand what you want to do with the captured screen.</string>
+	<string>Private Assistant converts your spoken commands into text so it can understand your intent.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 </dict>

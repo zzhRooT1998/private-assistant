@@ -161,6 +161,126 @@ public struct LedgerEntry: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
+public enum LedgerSortBy: String, Codable, CaseIterable, Identifiable, Sendable {
+    case createdAt = "created_at"
+    case occurredAt = "occurred_at"
+    case actualAmount = "actual_amount"
+    case merchant
+    case category
+
+    public var id: String { rawValue }
+}
+
+public enum LedgerSortOrder: String, Codable, CaseIterable, Identifiable, Sendable {
+    case ascending = "asc"
+    case descending = "desc"
+
+    public var id: String { rawValue }
+}
+
+public struct LedgerSearchFilters: Equatable, Sendable {
+    public var query: String
+    public var category: String
+    public var amountMin: String
+    public var amountMax: String
+    public var dateFrom: Date?
+    public var dateTo: Date?
+    public var sortBy: LedgerSortBy
+    public var sortOrder: LedgerSortOrder
+    public var limit: Int
+
+    public init(
+        query: String = "",
+        category: String = "",
+        amountMin: String = "",
+        amountMax: String = "",
+        dateFrom: Date? = nil,
+        dateTo: Date? = nil,
+        sortBy: LedgerSortBy = .createdAt,
+        sortOrder: LedgerSortOrder = .descending,
+        limit: Int = 50
+    ) {
+        self.query = query
+        self.category = category
+        self.amountMin = amountMin
+        self.amountMax = amountMax
+        self.dateFrom = dateFrom
+        self.dateTo = dateTo
+        self.sortBy = sortBy
+        self.sortOrder = sortOrder
+        self.limit = limit
+    }
+
+    public var hasActiveFilters: Bool {
+        !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !category.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !amountMin.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        !amountMax.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        dateFrom != nil ||
+        dateTo != nil ||
+        sortBy != .createdAt ||
+        sortOrder != .descending
+    }
+}
+
+public struct LedgerEntryDetail: Codable, Equatable, Identifiable, Sendable {
+    public let id: Int
+    public let merchant: String?
+    public let currency: String?
+    public let originalAmount: String?
+    public let discountAmount: String
+    public let actualAmount: String
+    public let category: String?
+    public let occurredAt: String?
+    public let effectiveOccurredAt: String
+    public let intent: String
+    public let sourceImagePath: String
+    public let rawModelResponseJSON: String
+    public let createdAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case merchant
+        case currency
+        case originalAmount = "original_amount"
+        case discountAmount = "discount_amount"
+        case actualAmount = "actual_amount"
+        case category
+        case occurredAt = "occurred_at"
+        case effectiveOccurredAt = "effective_occurred_at"
+        case intent
+        case sourceImagePath = "source_image_path"
+        case rawModelResponseJSON = "raw_model_response_json"
+        case createdAt = "created_at"
+    }
+}
+
+public struct LedgerFilterOptions: Codable, Equatable, Sendable {
+    public let categories: [String]
+    public let merchants: [String]
+    public let sortOptions: [String]
+    public let sortOrders: [String]
+
+    public init(
+        categories: [String] = [],
+        merchants: [String] = [],
+        sortOptions: [String] = [],
+        sortOrders: [String] = []
+    ) {
+        self.categories = categories
+        self.merchants = merchants
+        self.sortOptions = sortOptions
+        self.sortOrders = sortOrders
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case categories
+        case merchants
+        case sortOptions = "sort_options"
+        case sortOrders = "sort_orders"
+    }
+}
+
 public struct TodoEntry: Codable, Equatable, Identifiable, Sendable {
     public let id: Int
     public let title: String

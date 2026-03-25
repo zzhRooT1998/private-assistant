@@ -14,6 +14,8 @@ Production-oriented life-agent backend and iPhone client scaffold that accepts s
 - Executable handlers for bookkeeping, todo capture, reference saving, and schedule capture
 - Strict bookkeeping normalization for discount and payable amount
 - SQLite-backed ledger storage with raw model response retention
+- Advanced ledger search across keyword, category, amount range, date range, and sort order
+- Ledger detail retrieval with amount breakdown and pretty-printed raw model response
 - Simple HTML UI for upload results and recent entries
 
 ## Setup
@@ -56,9 +58,20 @@ APP_DATABASE_URL=ledger.db
   - `selected_intent`: one of the ranked intents returned earlier
   - `custom_intent`: a manual override such as `bookkeeping`, `todo`, `reference`, `schedule`, `记账`, `待办`, `收藏`, or `日程`
 - `GET /api/ledger`
-  Returns recent stored entries.
+  Returns stored bookkeeping entries and supports these query parameters:
+  - `q`
+  - `category`
+  - `amount_min`
+  - `amount_max`
+  - `date_from`
+  - `date_to`
+  - `sort_by`
+  - `sort_order`
+  - `limit`
+- `GET /api/ledger/filters`
+  Returns available filter metadata for the iPhone ledger UI, including categories, merchants, and supported sort options.
 - `GET /api/ledger/{id}`
-  Returns one stored entry.
+  Returns one stored entry with detail fields such as `effective_occurred_at` and `raw_model_response_json`.
 - `GET /api/todos`
   Returns recent todo entries.
 - `GET /api/references`
@@ -156,9 +169,16 @@ An iPhone client scaffold now lives in [`ios/`](./ios):
 
 See [`ios/README.md`](./ios/README.md) for setup steps. The current environment does not have full Xcode enabled, so the scaffold was generated source-first and should be compiled once in Xcode before product work continues.
 
+Recent iPhone-side bookkeeping improvements include:
+
+- advanced ledger filtering by keyword, category, amount range, date range, and sort mode
+- a ledger detail sheet with amount breakdown, metadata, and raw model output
+- native export actions from todos and schedules into Reminders, Calendar, and iOS 26.1+ AlarmKit
+
 ## Product Documents
 
 - [`docs/prd/2026-03-25-private-assistant-prd.md`](./docs/prd/2026-03-25-private-assistant-prd.md)
 - [`docs/architecture/2026-03-25-private-assistant-architecture.md`](./docs/architecture/2026-03-25-private-assistant-architecture.md)
 - [`docs/technical/2026-03-25-speech-first-intent-design.md`](./docs/technical/2026-03-25-speech-first-intent-design.md)
 - [`docs/progress/2026-03-25-speech-first-delivery-plan.md`](./docs/progress/2026-03-25-speech-first-delivery-plan.md)
+- [`docs/progress/2026-03-26-ledger-search-and-productivity-delivery.md`](./docs/progress/2026-03-26-ledger-search-and-productivity-delivery.md)

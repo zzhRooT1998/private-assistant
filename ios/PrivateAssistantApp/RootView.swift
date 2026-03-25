@@ -6,9 +6,10 @@ struct RootView: View {
 
     var body: some View {
         let strings = model.strings
+        let chromeBackground = Color(red: 0.97, green: 0.97, blue: 0.95)
 
         ZStack {
-            Color(red: 0.97, green: 0.97, blue: 0.95)
+            chromeBackground
                 .ignoresSafeArea()
 
             TabView {
@@ -32,9 +33,12 @@ struct RootView: View {
                         Label(strings.settingsTab, systemImage: "gearshape")
                     }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(chromeBackground)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .toolbarBackground(.visible, for: .tabBar)
-        .toolbarBackground(Color(red: 0.97, green: 0.97, blue: 0.95), for: .tabBar)
+        .toolbarBackground(chromeBackground, for: .tabBar)
         .toolbarColorScheme(.light, for: .tabBar)
         .task {
             await model.refreshActivityIfNeeded()

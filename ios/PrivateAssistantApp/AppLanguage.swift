@@ -108,6 +108,9 @@ struct AppStrings {
     var confidence: String { localized(en: "Confidence", zh: "置信度") }
     var actionLabel: String { localized(en: "Action", zh: "动作") }
     var amountLabel: String { localized(en: "Amount", zh: "金额") }
+    var addToReminders: String { localized(en: "Add to Reminders", zh: "加入提醒事项") }
+    var addToCalendar: String { localized(en: "Add to Calendar", zh: "加入日历") }
+    var setAlarm: String { localized(en: "Set Alarm", zh: "设置闹钟") }
 
     var activityTitle: String { localized(en: "Activity", zh: "动态") }
     var todos: String { localized(en: "Todos", zh: "待办") }
@@ -124,6 +127,45 @@ struct AppStrings {
     var ledgerTitle: String { localized(en: "Ledger", zh: "账本") }
     var entries: String { localized(en: "Entries", zh: "条目数") }
     var latest: String { localized(en: "Latest", zh: "最新金额") }
+    var totalAmount: String { localized(en: "Visible Total", zh: "筛选总额") }
+    var ledgerSearchPrompt: String { localized(en: "Search merchant, category, amount", zh: "搜索商户、分类或金额") }
+    var advancedFilters: String { localized(en: "Advanced Filters", zh: "高级筛选") }
+    var applyFilters: String { localized(en: "Apply Filters", zh: "应用筛选") }
+    var resetFilters: String { localized(en: "Reset Filters", zh: "重置筛选") }
+    var searchQuery: String { localized(en: "Search Query", zh: "搜索词") }
+    var categoryFilter: String { localized(en: "Category", zh: "分类") }
+    var amountRange: String { localized(en: "Amount Range", zh: "金额区间") }
+    var minimumAmount: String { localized(en: "Minimum Amount", zh: "最小金额") }
+    var maximumAmount: String { localized(en: "Maximum Amount", zh: "最大金额") }
+    var fromDate: String { localized(en: "From Date", zh: "开始日期") }
+    var toDate: String { localized(en: "To Date", zh: "结束日期") }
+    var sortBy: String { localized(en: "Sort By", zh: "排序字段") }
+    var sortOrder: String { localized(en: "Sort Order", zh: "排序方向") }
+    var ascending: String { localized(en: "Ascending", zh: "升序") }
+    var descending: String { localized(en: "Descending", zh: "降序") }
+    var allCategories: String { localized(en: "All Categories", zh: "全部分类") }
+    var noSearchResults: String { localized(en: "No ledger entries match the current filters", zh: "当前筛选下没有匹配的账单") }
+    var noSearchResultsHint: String {
+        localized(
+            en: "Adjust the search query, amount range, or dates and try again.",
+            zh: "调整搜索词、金额区间或日期后再试。"
+        )
+    }
+    var ledgerDetailTitle: String { localized(en: "Entry Detail", zh: "账单详情") }
+    var amountBreakdown: String { localized(en: "Amount Breakdown", zh: "金额拆解") }
+    var originalAmountLabel: String { localized(en: "Original", zh: "原价") }
+    var discountAmountLabel: String { localized(en: "Discount", zh: "优惠") }
+    var payableAmountLabel: String { localized(en: "Payable", zh: "实付") }
+    var metadataSection: String { localized(en: "Metadata", zh: "元数据") }
+    var rawModelResponse: String { localized(en: "Raw Model Response", zh: "模型原始结果") }
+    var merchantLabel: String { localized(en: "Merchant", zh: "商户") }
+    var categoryLabel: String { localized(en: "Category", zh: "分类") }
+    var currencyLabel: String { localized(en: "Currency", zh: "币种") }
+    var occurredAtLabel: String { localized(en: "Occurred At", zh: "发生时间") }
+    var createdAtLabel: String { localized(en: "Created At", zh: "创建时间") }
+    var sourceImageLabel: String { localized(en: "Source Image", zh: "来源图片") }
+    var intentLabel: String { localized(en: "Intent", zh: "意图") }
+    var unknownMerchant: String { localized(en: "Unknown Merchant", zh: "未知商户") }
     var noLedger: String { localized(en: "No bookkeeping entries yet", zh: "还没有账单记录") }
     var noLedgerHint: String {
         localized(
@@ -132,6 +174,31 @@ struct AppStrings {
         )
     }
     func occurredAt(_ value: String) -> String { localized(en: "Occurred: \(value)", zh: "发生时间：\(value)") }
+    func filteredCount(_ count: Int) -> String { localized(en: "\(count) results", zh: "共 \(count) 条") }
+
+    func localizedLedgerSortBy(_ sortBy: LedgerSortBy) -> String {
+        switch sortBy {
+        case .createdAt:
+            return localized(en: "Created Time", zh: "创建时间")
+        case .occurredAt:
+            return localized(en: "Occurred Time", zh: "发生时间")
+        case .actualAmount:
+            return localized(en: "Actual Amount", zh: "实付金额")
+        case .merchant:
+            return localized(en: "Merchant", zh: "商户")
+        case .category:
+            return localized(en: "Category", zh: "分类")
+        }
+    }
+
+    func localizedLedgerSortOrder(_ sortOrder: LedgerSortOrder) -> String {
+        switch sortOrder {
+        case .ascending:
+            return ascending
+        case .descending:
+            return descending
+        }
+    }
 
     var settingsTitle: String { localized(en: "Settings", zh: "设置") }
     var backend: String { localized(en: "Backend", zh: "后端") }
@@ -196,6 +263,18 @@ struct AppStrings {
             en: "\(count) item(s) need your intent confirmation.",
             zh: "有 \(count) 条内容需要你确认意图。"
         )
+    }
+
+    func notificationBodyForReminderSaved(title: String) -> String {
+        localized(en: "Added to Reminders: \(title).", zh: "已加入提醒事项：\(title)。")
+    }
+
+    func notificationBodyForCalendarSaved(title: String) -> String {
+        localized(en: "Added to Calendar: \(title).", zh: "已加入日历：\(title)。")
+    }
+
+    func notificationBodyForAlarmScheduled(title: String) -> String {
+        localized(en: "Alarm scheduled: \(title).", zh: "已设置闹钟：\(title)。")
     }
 
     func localizedIntent(_ intent: String) -> String {

@@ -13,6 +13,8 @@ struct PrivateAssistantApp: App {
             RootView()
                 .environmentObject(model)
                 .tint(Color(red: 0.82, green: 0.33, blue: 0.12))
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(red: 0.97, green: 0.97, blue: 0.95).ignoresSafeArea())
         }
     }
 }

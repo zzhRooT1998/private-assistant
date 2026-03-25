@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import mimetypes
+import re
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +28,86 @@ Intent must be one of:
 
 
 class VisionIntentService:
+    BOOKKEEPING_COMMAND_PHRASES = (
+        "帮我记账",
+        "给我记账",
+        "记一下账",
+        "记这笔账",
+        "记这笔",
+        "记一笔",
+        "记到账上",
+        "记到帐上",
+        "报销一下",
+        "报销这笔",
+        "记录这笔开销",
+        "log this expense",
+        "log this receipt",
+        "record this expense",
+        "record this receipt",
+        "track this expense",
+        "track this receipt",
+    )
+    REFERENCE_COMMAND_PHRASES = (
+        "收藏这个",
+        "保存这个",
+        "帮我保存",
+        "帮我存一下",
+        "存一下",
+        "记下来",
+        "稍后看",
+        "留着以后看",
+        "bookmark this",
+        "save this",
+        "save for later",
+        "keep this for later",
+    )
+    REMINDER_COMMAND_PHRASES = (
+        "提醒我",
+        "记得",
+        "remind me",
+        "remember to",
+    )
+    TODO_COMMAND_PHRASES = (
+        "加到待办",
+        "加到我的待办",
+        "记成待办",
+        "做个待办",
+        "稍后处理",
+        "回头处理",
+        "之后处理",
+        "晚点处理",
+        "后面处理",
+        "follow up on this",
+        "follow up later",
+        "add this to my todo",
+        "add to my todo",
+        "save as todo",
+    )
+    SCHEDULE_COMMAND_PHRASES = (
+        "安排一下",
+        "安排个日程",
+        "创建日程",
+        "加入日程",
+        "加到日历",
+        "放到日历",
+        "约个时间",
+        "预约一下",
+        "约个会",
+        "schedule this",
+        "schedule it",
+        "put this on my calendar",
+        "add this to my calendar",
+        "book an appointment",
+        "set up a meeting",
+    )
+    TIME_SIGNAL_PATTERNS = (
+        r"(今天|明天|后天|今晚|今早|今晨|明早|明晚|下午|上午|中午|晚上|周[一二三四五六日天]|星期[一二三四五六日天]|下周|本周)",
+        r"(\d{1,2}点半|\d{1,2}点\d{1,2}分|\d{1,2}月\d{1,2}日|\d{1,2}号)",
+        r"\b(today|tomorrow|tonight|this morning|this afternoon|this evening|next week)\b",
+        r"\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b",
+        r"\b\d{1,2}(:\d{2})?\s?(am|pm)\b",
+    )
+
     def __init__(
         self,
         *,
@@ -154,28 +235,10 @@ class VisionIntentService:
         speech_text: str | None,
         speech_confidence: float | None,
     ) -> str | None:
-        normalized = self._normalize_free_text(speech_text)
-        if normalized is None:
-            return None
-        if speech_confidence is not None and speech_confidence < 0.55:
-            return None
-
-        scores = {
-            "bookkeeping": self._count_matches(normalized, ("记账", "记这笔", "记一下账", "报销", "花了", "付款", "收据", "账单", "expense", "receipt", "log this")),
-            "todo": self._count_matches(normalized, ("待办", "todo", "记得", "稍后处理", "回头处理", "之后做", "later", "follow up", "to do")),
-            "reference": self._count_matches(normalized, ("收藏", "保存这个", "存一下", "记下来", "稍后看", "save this", "bookmark", "reference")),
-            "schedule": self._count_matches(normalized, ("提醒我", "日程", "安排", "预约", "开会", "明天", "后天", "今晚", "下午", "上午", "几点", "schedule", "remind me", "meeting")),
-        }
-        ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
-        top_intent, top_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0
-        if top_score < 1:
-            return None
-        if top_score == second_score:
-            return None
-        if top_intent == "schedule" and not any(token in normalized for token in ("提醒", "日程", "安排", "预约", "开会", "schedule", "remind")):
-            return None
-        return top_intent
+        return self._infer_explicit_speech_intent_from_signal(
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
+        )
 
     def prioritize_speech_intent(
         self,
@@ -508,6 +571,49 @@ class VisionIntentService:
     def _count_matches(text: str, keywords: tuple[str, ...]) -> int:
         return sum(1 for keyword in keywords if keyword in text)
 
+    @classmethod
+    def _infer_explicit_speech_intent_from_signal(
+        cls,
+        *,
+        speech_text: str | None,
+        speech_confidence: float | None,
+    ) -> str | None:
+        normalized = cls._normalize_free_text(speech_text)
+        if normalized is None:
+            return None
+        if speech_confidence is not None and speech_confidence < 0.55:
+            return None
+        return cls._parse_explicit_speech_command(normalized)
+
+    @classmethod
+    def _parse_explicit_speech_command(cls, text: str) -> str | None:
+        has_time_signal = cls._contains_time_signal(text)
+
+        if cls._contains_any_phrase(text, cls.BOOKKEEPING_COMMAND_PHRASES):
+            return "bookkeeping"
+
+        if cls._contains_any_phrase(text, cls.REFERENCE_COMMAND_PHRASES):
+            return "reference"
+
+        if cls._contains_any_phrase(text, cls.REMINDER_COMMAND_PHRASES):
+            return "schedule" if has_time_signal else "todo"
+
+        if cls._contains_any_phrase(text, cls.SCHEDULE_COMMAND_PHRASES):
+            return "schedule"
+
+        if cls._contains_any_phrase(text, cls.TODO_COMMAND_PHRASES):
+            return "todo"
+
+        return None
+
+    @classmethod
+    def _contains_time_signal(cls, text: str) -> bool:
+        return any(re.search(pattern, text) for pattern in cls.TIME_SIGNAL_PATTERNS)
+
+    @staticmethod
+    def _contains_any_phrase(text: str, phrases: tuple[str, ...]) -> bool:
+        return any(phrase in text for phrase in phrases)
+
     @staticmethod
     def _extract_json_text(text: str) -> str:
         stripped = text.strip()
@@ -622,20 +728,10 @@ class StubVisionIntentService:
         speech_text: str | None,
         speech_confidence: float | None,
     ) -> str | None:
-        normalized = VisionIntentService._normalize_free_text(speech_text)
-        if normalized is None:
-            return None
-        if speech_confidence is not None and speech_confidence < 0.55:
-            return None
-        if any(token in normalized for token in ("记账", "记这笔", "记一下账", "报销", "expense", "receipt", "log this")):
-            return "bookkeeping"
-        if any(token in normalized for token in ("提醒我", "日程", "安排", "预约", "开会", "schedule", "remind")):
-            return "schedule"
-        if any(token in normalized for token in ("待办", "todo", "记得", "稍后处理", "later", "follow up")):
-            return "todo"
-        if any(token in normalized for token in ("收藏", "保存这个", "稍后看", "save this", "bookmark")):
-            return "reference"
-        return None
+        return VisionIntentService._infer_explicit_speech_intent_from_signal(
+            speech_text=speech_text,
+            speech_confidence=speech_confidence,
+        )
 
     def prioritize_speech_intent(
         self,

@@ -74,11 +74,31 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         )
     }
 
-    public func fetchLedger() async throws -> [LedgerEntry] {
-        let endpoint = try makeURL(path: "api/ledger")
+    public func fetchLedger(filters: LedgerSearchFilters = LedgerSearchFilters()) async throws -> [LedgerEntry] {
+        let endpoint = try makeLedgerURL(filters: filters)
         do {
             let (data, response) = try await session.data(from: endpoint)
             return try decode([LedgerEntry].self, from: data, response: response)
+        } catch let error as URLError where error.code == .timedOut {
+            throw PrivateAssistantAPIError.requestTimedOut
+        }
+    }
+
+    public func fetchLedgerDetail(entryID: Int) async throws -> LedgerEntryDetail {
+        let endpoint = try makeURL(path: "api/ledger/\(entryID)")
+        do {
+            let (data, response) = try await session.data(from: endpoint)
+            return try decode(LedgerEntryDetail.self, from: data, response: response)
+        } catch let error as URLError where error.code == .timedOut {
+            throw PrivateAssistantAPIError.requestTimedOut
+        }
+    }
+
+    public func fetchLedgerFilterOptions() async throws -> LedgerFilterOptions {
+        let endpoint = try makeURL(path: "api/ledger/filters")
+        do {
+            let (data, response) = try await session.data(from: endpoint)
+            return try decode(LedgerFilterOptions.self, from: data, response: response)
         } catch let error as URLError where error.code == .timedOut {
             throw PrivateAssistantAPIError.requestTimedOut
         }
@@ -178,6 +198,54 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         request.setValue(multipart.contentTypeHeader, forHTTPHeaderField: "Content-Type")
         request.httpBody = multipart.encoded()
         return request
+    }
+
+    private func makeLedgerURL(filters: LedgerSearchFilters) throws -> URL {
+        var components = URLComponents(url: try makeURL(path: "api/ledger"), resolvingAgainstBaseURL: false)
+        var queryItems: [URLQueryItem] = [
+            URLQueryItem(name: "sort_by", value: filters.sortBy.rawValue),
+            URLQueryItem(name: "sort_order", value: filters.sortOrder.rawValue),
+            URLQueryItem(name: "limit", value: String(filters.limit)),
+        ]
+
+        let trimmedQuery = filters.query.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedQuery.isEmpty {
+            queryItems.append(URLQueryItem(name: "q", value: trimmedQuery))
+        }
+
+        let trimmedCategory = filters.category.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedCategory.isEmpty {
+            queryItems.append(URLQueryItem(name: "category", value: trimmedCategory))
+        }
+
+        let trimmedAmountMin = filters.amountMin.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedAmountMin.isEmpty {
+            queryItems.append(URLQueryItem(name: "amount_min", value: trimmedAmountMin))
+        }
+
+        let trimmedAmountMax = filters.amountMax.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmedAmountMax.isEmpty {
+            queryItems.append(URLQueryItem(name: "amount_max", value: trimmedAmountMax))
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.calendar = Calendar(identifier: .gregorian)
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+
+        if let dateFrom = filters.dateFrom {
+            queryItems.append(URLQueryItem(name: "date_from", value: dateFormatter.string(from: dateFrom)))
+        }
+
+        if let dateTo = filters.dateTo {
+            queryItems.append(URLQueryItem(name: "date_to", value: dateFormatter.string(from: dateTo)))
+        }
+
+        components?.queryItems = queryItems
+        if let url = components?.url {
+            return url
+        }
+        return try makeURL(path: "api/ledger")
     }
 
     private static func makeSession() -> URLSession {

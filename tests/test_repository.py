@@ -106,3 +106,77 @@ def test_inserts_non_bookkeeping_entries(tmp_path):
     assert len(repo.list_todo_entries()) == 1
     assert len(repo.list_reference_entries()) == 1
     assert len(repo.list_schedule_entries()) == 1
+
+
+def test_searches_ledger_entries_by_filters_and_sort(tmp_path):
+    db_path = tmp_path / "ledger.db"
+    init_db(db_path)
+    repo = LedgerRepository(db_path)
+
+    repo.create_entry(
+        normalized=NormalizedLedgerEntry(
+            merchant="Coffee Bean",
+            currency="CNY",
+            original_amount=Decimal("30.00"),
+            discount_amount=Decimal("5.00"),
+            actual_amount=Decimal("25.00"),
+            category="food",
+            occurred_at="2026-03-25T08:30:00+08:00",
+        ),
+        intent="bookkeeping",
+        source_image_path="uploads/coffee.jpg",
+        raw_model_response={"intent": "bookkeeping"},
+    )
+    repo.create_entry(
+        normalized=NormalizedLedgerEntry(
+            merchant="DiDi",
+            currency="CNY",
+            original_amount=Decimal("60.00"),
+            discount_amount=Decimal("0.00"),
+            actual_amount=Decimal("60.00"),
+            category="transport",
+            occurred_at="2026-03-26T10:00:00+08:00",
+        ),
+        intent="bookkeeping",
+        source_image_path="uploads/didi.jpg",
+        raw_model_response={"intent": "bookkeeping"},
+    )
+
+    items = repo.search_entries(
+        query="di",
+        amount_min=50,
+        date_from="2026-03-26",
+        sort_by="actual_amount",
+        sort_order="desc",
+        limit=10,
+    )
+
+    assert len(items) == 1
+    assert items[0]["merchant"] == "DiDi"
+
+
+def test_returns_ledger_detail_with_pretty_raw_model_response(tmp_path):
+    db_path = tmp_path / "ledger.db"
+    init_db(db_path)
+    repo = LedgerRepository(db_path)
+
+    entry_id = repo.create_entry(
+        normalized=NormalizedLedgerEntry(
+            merchant="Bakery",
+            currency="CNY",
+            original_amount=Decimal("18.00"),
+            discount_amount=Decimal("3.00"),
+            actual_amount=Decimal("15.00"),
+            category="food",
+            occurred_at="2026-03-24T09:00:00+08:00",
+        ),
+        intent="bookkeeping",
+        source_image_path="uploads/bakery.jpg",
+        raw_model_response={"intent": "bookkeeping", "merchant": "Bakery"},
+    )
+
+    item = repo.get_entry_detail(entry_id)
+
+    assert item is not None
+    assert item["effective_occurred_at"] == "2026-03-24T09:00:00+08:00"
+    assert '"merchant": "Bakery"' in item["raw_model_response_json"]
