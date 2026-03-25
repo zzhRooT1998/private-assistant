@@ -5,6 +5,7 @@ public enum PrivateAssistantAPIError: LocalizedError {
     case invalidResponse
     case requestTimedOut
     case expiredTunnel
+    case transientNetworkFailure
     case unexpectedStatus(code: Int, message: String)
 
     public var errorDescription: String? {
@@ -17,6 +18,8 @@ public enum PrivateAssistantAPIError: LocalizedError {
             return "The request timed out. The assistant may still be processing the screenshot. Try again in a moment."
         case .expiredTunnel:
             return "The current tunnel URL is no longer reachable. Update the Server Base URL in Settings with the latest ngrok address."
+        case .transientNetworkFailure:
+            return "The upload was interrupted by a temporary network drop. Try again in a moment, or switch to a more stable connection."
         case let .unexpectedStatus(code, message):
             return "Server returned \(code): \(message)"
         }
@@ -28,6 +31,11 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         static let request: TimeInterval = 30
         static let resource: TimeInterval = 180
         static let uploadRequest: TimeInterval = 180
+    }
+
+    private enum RetryPolicy {
+        static let intakeRetries = 2
+        static let intakeBackoffNanoseconds: UInt64 = 800_000_000
     }
 
     private let configurationStore: ConfigurationStore
@@ -47,10 +55,10 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         let request = try makeMobileIntakeRequest(payload)
 
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await performData(for: request, retriesRemaining: RetryPolicy.intakeRetries)
             return try decode(MobileIntakeResponse.self, from: data, response: response)
-        } catch let error as URLError where error.code == .timedOut {
-            throw PrivateAssistantAPIError.requestTimedOut
+        } catch {
+            throw mapTransportError(error)
         }
     }
 
@@ -59,31 +67,11 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         completion: (@Sendable (Result<MobileIntakeResponse, Error>) -> Void)? = nil
     ) throws {
         let request = try makeMobileIntakeRequest(payload)
-        let task = session.dataTask(with: request) { [decoder] data, response, error in
-            if let error {
-                completion?(.failure(error))
-                return
-            }
-
-            guard let data, let response else {
-                completion?(.failure(PrivateAssistantAPIError.invalidResponse))
-                return
-            }
-
-            do {
-                guard let httpResponse = response as? HTTPURLResponse else {
-                    throw PrivateAssistantAPIError.invalidResponse
-                }
-                guard (200...299).contains(httpResponse.statusCode) else {
-                    throw Self.decodeHTTPError(data: data, response: httpResponse)
-                }
-                let decoded = try decoder.decode(MobileIntakeResponse.self, from: data)
-                completion?(.success(decoded))
-            } catch {
-                completion?(.failure(error))
-            }
-        }
-        task.resume()
+        performEnqueuedIntakeRequest(
+            request,
+            retriesRemaining: RetryPolicy.intakeRetries,
+            completion: completion
+        )
     }
 
     public func fetchLedger() async throws -> [LedgerEntry] {
@@ -196,6 +184,7 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
         let configuration = URLSessionConfiguration.default
         configuration.timeoutIntervalForRequest = Timeout.request
         configuration.timeoutIntervalForResource = Timeout.resource
+        configuration.waitsForConnectivity = true
         return URLSession(configuration: configuration)
     }
 
@@ -223,6 +212,84 @@ public final class PrivateAssistantAPIClient: @unchecked Sendable {
             .trimmingCharacters(in: .whitespacesAndNewlines)
         let shortened = compactMessage.count > 180 ? String(compactMessage.prefix(180)) + "..." : compactMessage
         return .unexpectedStatus(code: response.statusCode, message: shortened)
+    }
+
+    private func performData(
+        for request: URLRequest,
+        retriesRemaining: Int
+    ) async throws -> (Data, URLResponse) {
+        do {
+            return try await session.data(for: request)
+        } catch let error as URLError where retriesRemaining > 0 && Self.shouldRetry(error) {
+            try await Task.sleep(nanoseconds: RetryPolicy.intakeBackoffNanoseconds)
+            return try await performData(for: request, retriesRemaining: retriesRemaining - 1)
+        }
+    }
+
+    private func performEnqueuedIntakeRequest(
+        _ request: URLRequest,
+        retriesRemaining: Int,
+        completion: (@Sendable (Result<MobileIntakeResponse, Error>) -> Void)?
+    ) {
+        let task = session.dataTask(with: request) { [decoder] data, response, error in
+            if let urlError = error as? URLError, retriesRemaining > 0, Self.shouldRetry(urlError) {
+                DispatchQueue.global().asyncAfter(deadline: .now() + 0.8) { [weak self] in
+                    self?.performEnqueuedIntakeRequest(
+                        request,
+                        retriesRemaining: retriesRemaining - 1,
+                        completion: completion
+                    )
+                }
+                return
+            }
+
+            if let error {
+                completion?(.failure(self.mapTransportError(error)))
+                return
+            }
+
+            guard let data, let response else {
+                completion?(.failure(PrivateAssistantAPIError.invalidResponse))
+                return
+            }
+
+            do {
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    throw PrivateAssistantAPIError.invalidResponse
+                }
+                guard (200...299).contains(httpResponse.statusCode) else {
+                    throw Self.decodeHTTPError(data: data, response: httpResponse)
+                }
+                let decoded = try decoder.decode(MobileIntakeResponse.self, from: data)
+                completion?(.success(decoded))
+            } catch {
+                completion?(.failure(error))
+            }
+        }
+        task.resume()
+    }
+
+    private static func shouldRetry(_ error: URLError) -> Bool {
+        switch error.code {
+        case .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            return true
+        default:
+            return false
+        }
+    }
+
+    private func mapTransportError(_ error: Error) -> Error {
+        guard let urlError = error as? URLError else {
+            return error
+        }
+        switch urlError.code {
+        case .timedOut:
+            return PrivateAssistantAPIError.requestTimedOut
+        case .networkConnectionLost, .notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed:
+            return PrivateAssistantAPIError.transientNetworkFailure
+        default:
+            return urlError
+        }
     }
 }
 
